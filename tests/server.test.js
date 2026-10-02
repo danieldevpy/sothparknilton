@@ -1,0 +1,82 @@
+// Integração: servidor real + 2 clientes WebSocket.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import WebSocket from 'ws';
+import { createGameServer } from '../server/index.js';
+import { MSG } from '../shared/constants.js';
+
+function client(port) {
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const msgs = [];
+  const waiters = [];
+  ws.on('message', (raw) => {
+    const m = JSON.parse(raw.toString());
+    msgs.push(m);
+    for (const w of [...waiters]) if (w.pred(m)) { waiters.splice(waiters.indexOf(w), 1); w.resolve(m); }
+  });
+  return {
+    ws,
+    open: new Promise((r) => ws.once('open', r)),
+    send: (o) => ws.send(JSON.stringify(o)),
+    waitFor: (pred, ms = 2000) => {
+      const found = msgs.find(pred);
+      if (found) return Promise.resolve(found);
+      return new Promise((resolve, reject) => {
+        waiters.push({ pred, resolve });
+        setTimeout(() => reject(new Error('timeout esperando mensagem')), ms);
+      });
+    },
+  };
+}
+
+test('dois clientes se veem, conversam e se movem', async () => {
+  const game = createGameServer({ port: 0, host: '127.0.0.1', log: () => {} });
+  const port = await game.ready;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`);
+    assert.equal(res.status, 200);
+    assert.match(await res.text(), /Nilton Park/);
+    assert.equal((await fetch(`http://127.0.0.1:${port}/shared/map.js`)).status, 200);
+    assert.equal((await fetch(`http://127.0.0.1:${port}/..%2fpackage.json`)).status, 403);
+
+    const a = client(port);
+    await a.open;
+    a.send({ t: MSG.HELLO, nick: 'Ana' });
+    const wa = await a.waitFor((m) => m.t === MSG.WELCOME);
+
+    const b = client(port);
+    await b.open;
+    b.send({ t: MSG.HELLO, nick: 'Bia' });
+    const wb = await b.waitFor((m) => m.t === MSG.WELCOME);
+    assert.equal(wb.players.length, 2);
+    await a.waitFor((m) => m.t === MSG.JOIN && m.player.nick === 'Bia');
+
+    b.send({ t: MSG.CHAT, text: 'olá Ana' });
+    const chat = await a.waitFor((m) => m.t === MSG.CHAT);
+    assert.equal(chat.text, 'olá Ana');
+    assert.equal(chat.id, wb.you);
+
+    a.send({ t: MSG.MOVE, x: 1100, y: 1100 });
+    await b.waitFor((m) => m.t === MSG.SNAP && m.p.some(([id, , , , moving]) => id === wa.you && moving));
+
+    b.ws.close();
+    await a.waitFor((m) => m.t === MSG.LEAVE && m.id === wb.you);
+    a.ws.close();
+  } finally {
+    await game.close();
+  }
+});
+
+test('hello inválido recebe erro fatal', async () => {
+  const game = createGameServer({ port: 0, host: '127.0.0.1', log: () => {} });
+  const port = await game.ready;
+  try {
+    const c = client(port);
+    await c.open;
+    c.send({ t: MSG.HELLO, nick: '' });
+    const err = await c.waitFor((m) => m.t === MSG.ERROR);
+    assert.equal(err.fatal, true);
+  } finally {
+    await game.close();
+  }
+});
