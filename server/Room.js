@@ -145,6 +145,9 @@ export class Room {
       case MSG.CHAT:
         this.onChat(p, msg.text);
         break;
+      case MSG.PING:
+        if (isNum(msg.n)) this.sendTo(p, { t: MSG.PONG, n: msg.n });
+        break;
       case MSG.EMOTE:
         this.onEmote(p, msg.e);
         break;

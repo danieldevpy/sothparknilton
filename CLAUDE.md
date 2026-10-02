@@ -24,7 +24,9 @@ node scripts/golagol-balance.js 250 skill   # simula % de gol (equilíbrio)
 node scripts/ktbot.js                    # bot de Karatê (aceita desafios; estilos: mixed, jabber, kicker...)
 node scripts/ktbot.js SenseiBot SeuNick  # bot que te desafia pro karatê quando você entrar
 node scripts/karate-balance.js 40        # estilos de IA lutando entre si (equilíbrio dos golpes)
+./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
 ```
+Produção: **http://204.157.124.113:3000** (VPS, Docker, só IP externo) — operação em `docs/DEPLOY.md`.
 Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 
 ## Mapa do código
@@ -44,6 +46,8 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/game.js` | Estado do cliente, interpolação, câmera, loop de render, hit-test |
 | `client/js/render/*` | Desenho procedural: `paint.js` (helpers), `character.js`, `world.js`, `bubbles.js`, `fx.js` |
 | `client/js/hud.js` / `input.js` / `audio.js` | Interface DOM, controles, sons sintetizados |
+| `client/js/jitter.js` | Atraso de interpolação adaptativo ao jitter da rede (praça, Gol a Gol, Karatê) |
+| `Dockerfile` / `compose.yml` / `scripts/deploy.sh` | Produção na VPS (ver `docs/DEPLOY.md`) |
 | `client/js/mobile.js` | Interface mobile (estilo Roblox): detecção, joystick, botões de ação, painéis; ativa `body.mobile` |
 | `client/assets/generated/` | Assets gerados por IA (Kairogen) — ver `docs/ASSETS.md` |
 | `tests/` | Testes `node:test` |
@@ -57,6 +61,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 - `docs/DECISIONS.md` — registro de decisões (ADR curto)
 - `docs/ROADMAP.md` — backlog por fases com IDs
 - `docs/DEVLOG.md` — diário de sessões (o que foi feito, quando)
+- `docs/DEPLOY.md` — produção na VPS (Docker), deploy de uma vez, operação, jogabilidade pela internet
 
 ## Regras de trabalho
 1. **Servidor é autoritativo.** Cliente só pede (`move`, `interact`, `emote`, `chat`); o servidor valida e transmite.

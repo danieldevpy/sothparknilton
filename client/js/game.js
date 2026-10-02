@@ -2,7 +2,8 @@
 // interpola posições (snapshots) e desenha tudo no canvas.
 
 import { MAP, zoneAt } from '/shared/map.js';
-import { MSG, EMOTES, INTERP_DELAY_MS } from '/shared/constants.js';
+import { MSG, EMOTES, INTERP_DELAY_MS, SNAPSHOT_HZ } from '/shared/constants.js';
+import { AdaptiveDelay } from './jitter.js';
 import { inLake, onDock } from '/shared/geometry.js';
 import { drawCharacter, headTop } from './render/character.js';
 import { prerenderBackground, mapSprites, duckPositions, drawBall, drawDuck, drawDestination } from './render/world.js';
@@ -34,6 +35,9 @@ export class Game {
     this.shakeAt = 0;
     this.gg = new GolAGolClient(this, hud);
     this.kt = new KarateClient(this, hud);
+    // atraso de interpolação da praça se adapta ao jitter da rede (ver jitter.js)
+    this.snapDelay = new AdaptiveDelay({ interval: 1000 / SNAPSHOT_HZ, min: INTERP_DELAY_MS, max: 320 });
+    this.rtt = null;
     this.bg = prerenderBackground(MAP);
     this.sprites = mapSprites(MAP, this.world);
     this.zone = null;
@@ -80,6 +84,7 @@ export class Game {
         break;
       }
       case MSG.SNAP:
+        this.snapDelay.arrive(now);
         for (const [id, x, y, dir, moving, pose] of msg.p) {
           const p = this.players.get(id);
           if (!p) continue;
@@ -113,6 +118,14 @@ export class Game {
         this.fx.add('confetti', { x: gx, y: f.y + f.h / 2 }, now);
         this.hud.banner(`GOOOOL ${msg.side === 'red' ? 'VERMELHO' : 'AZUL'}!`, msg.by ? `chute de ${msg.by}` : '');
         play('goal');
+        break;
+      }
+      case MSG.PONG: {
+        const rtt = now - msg.n;
+        if (rtt >= 0 && rtt < 10000) {
+          this.rtt = this.rtt == null ? rtt : this.rtt + (rtt - this.rtt) * 0.3;
+          this.hud.ping(this.rtt);
+        }
         break;
       }
       case MSG.ERROR:
@@ -331,7 +344,7 @@ export class Game {
   }
 
   ballPos() {
-    return this.sample(this.ball.buf, performance.now() - INTERP_DELAY_MS);
+    return this.sample(this.ball.buf, performance.now() - this.snapDelay.get());
   }
 
   // ---------- loop ----------
@@ -342,7 +355,7 @@ export class Game {
     this.last = now;
     if (window.innerWidth !== this.vw || window.innerHeight !== this.vh) this.resize();
     const t = now / 1000;
-    const renderAt = now - INTERP_DELAY_MS;
+    const renderAt = now - this.snapDelay.get();
     // lutando no dojo: a cena é outra (ver minigames/karate.js)
     if (this.kt.active()) {
       this.kt.frame(dt, now);

@@ -139,6 +139,19 @@ export class Hud {
     t.style.transform = `translate(${x + 14}px, ${y + 12}px)`;
   }
 
+  // Latência medida por ping/pong (cor indica a qualidade da conexão).
+  ping(ms) {
+    if (!this.pingEl) {
+      this.pingEl = el('div', '');
+      this.pingEl.id = 'ping';
+      document.body.appendChild(this.pingEl);
+    }
+    const v = Math.round(ms);
+    this.pingEl.textContent = `📶 ${v} ms`;
+    this.pingEl.className = v < 90 ? 'good' : v < 180 ? 'ok' : 'bad';
+    this.pingEl.title = 'Latência até o servidor';
+  }
+
   // ---------- desafios / Gol a Gol ----------
 
   // Cartão ao clicar em outro player.

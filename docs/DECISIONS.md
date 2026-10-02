@@ -78,3 +78,14 @@ os estilos de um golpe só e dividiu o dano entre os 4 golpes.
 **D-018 — Cliente prevê o próprio lutador, interpola o oponente.** (2026-10-01)
 Luta precisa de resposta imediata: andar, dash e o começo do golpe aparecem na hora; o servidor decide acertos.
 Oponente com 80 ms de atraso (como o Gol a Gol, D-011).
+
+**D-019 — Produção em Docker na VPS existente, só pelo IP externo na porta 3000.** (2026-10-02)
+A VPS já roda outros sistemas (80/443 ocupadas por eles). Container isolado com limites (256 MB, 1 CPU, só-leitura),
+porta própria e sem tocar no nginx deles. Sem domínio ⇒ sem HTTPS: o cliente usa `ws://` (já escolhe `wss://` sozinho
+se um dia houver HTTPS). Deploy por `scripts/deploy.sh` (tar via SSH + `compose up --build`).
+
+**D-020 — Jogabilidade pela internet: atraso adaptativo + ping + reconexão automática.** (2026-10-02)
+Latência real até a VPS variou 15–195 ms (jitter de Wi-Fi). Atraso fixo de interpolação travava com jitter; agora
+`AdaptiveDelay` ajusta por conexão. Predição do Karatê considera o RTT. Queda de rede/deploy reconecta sozinho
+(recarrega e refaz o login com o perfil salvo) — resolve o essencial da T-101 sem sessão no servidor.
+

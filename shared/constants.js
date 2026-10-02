@@ -45,6 +45,7 @@ export const MSG = {
   CHAT: 'chat',
   EMOTE: 'emote',
   INTERACT: 'interact',
+  PING: 'ping', // c->s {n} | s->c PONG {n} (mede latência)
   // servidor -> cliente
   WELCOME: 'welcome',
   JOIN: 'join',
@@ -54,6 +55,7 @@ export const MSG = {
   OBJ: 'obj',
   GOAL: 'goal',
   ERROR: 'error',
+  PONG: 'pong',
   // ambos os sentidos: CHAT e EMOTE são reenviados pelo servidor com `id`
 
   // ---- desafios / minigame Gol a Gol ----

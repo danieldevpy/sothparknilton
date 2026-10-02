@@ -9,6 +9,7 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 | `hello` | `v`, `nick`, `look:{hat,shirt,skin}` | Primeira mensagem obrigatória (10 s). Cores fora da paleta viram padrão. |
 | `move` | `x`, `y` | Destino. Servidor faz pathfinding. Cancela interação pendente e levanta do banco. |
 | `chat` | `text` | Máx. 120 chars, cooldown 600 ms, controle removido. |
+| `ping` | `n` (número) | A cada 2 s; o servidor responde `pong` com o mesmo `n` (latência). |
 | `emote` | `e` ∈ `wave, jump, dance, fart, sit` | `sit` = sentar no chão (pose até se mover). |
 | `interact` | `id`, `x?`, `y?` | `id`: `fountain`, `bench-N`, `lamp-N`, `lake` (+x,y na água), `duck` (+x,y), `ball`. |
 | `challenge` | `to`, `rematch?`, `game?` | Desafia. `game` ∈ `golagol` (padrão) \| `karate`. Se o alvo já tinha te desafiado, vira aceite (do jogo dele). |
@@ -31,6 +32,7 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 | `obj` | `id`, `on`, `by` | Poste ligado/desligado |
 | `goal` | `side` (`red`/`blue` = quem marcou), `score`, `by` (nick ou null) | Gol |
 | `error` | `msg`, `fatal?` | `fatal` = conexão será fechada (ex.: nick inválido) |
+| `pong` | `n` | Resposta ao `ping` |
 | `challenge` | `from`, `nick`, `rematch`, `ttl`, `game` | Convite recebido (expira em `ttl` ms) |
 | `ch_status` | `status`, `with`, `nick`, `game` | Resposta ao desafiante/convidado: `sent`, `declined`, `expired`, `busy`, `field_busy`, `gone`, `invalid` |
 | `gg_start` | `left:{id,nick}`, `right:{id,nick}`, `first` | Partida começou (para todos — espectadores também) |
@@ -54,4 +56,4 @@ Karatê (2026-10-01, ainda v2: só campos/mensagens novos e opcionais) — `game
 ## Regras de evolução
 - Campo novo opcional → compatível, não precisa subir versão.
 - Mudar significado/remover campo → subir `PROTOCOL_VERSION` e documentar aqui.
-- Fechamentos: `4000` hello timeout · `4001` hello inválido.
+- Fechamentos: `4000` hello timeout · `4001` hello inválido · `4002` conexões demais do mesmo IP (> 12).

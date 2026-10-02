@@ -56,7 +56,7 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - 🔜 T-329 Treino solo contra o SenseiBot embutido no servidor (sem rodar script)
 
 ## Fase 1 — Polimento da sala 🔜
-- 🔜 T-101 Reconexão automática (sem recarregar) e manter sessão por alguns segundos
+- 🟡 T-101 Reconexão automática ✅ (recarrega e entra sozinho, v0.4.0) · falta manter a sessão/partida por alguns segundos
 - 🔜 T-102 Cartão do player: já tem desafiar/acenar (v0.2.0); falta seguir, perfil e sussurrar
 - 🔜 T-103 Sussurro (`/w nick msg`) e filtro básico de palavrão configurável
 - ✅ T-104 Mobile: feito na Fase M (falta só zoom por pinça → T-508+)
@@ -79,5 +79,6 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 ## Fase 4 — Escala 💡
 - 💡 T-401 Múltiplas salas/mapas (um `Room` por sala, portas entre mapas)
 - 💡 T-402 Snapshots delta + área de interesse
-- 💡 T-403 Deploy (Docker + HTTPS/WSS) e métricas (`/health` já existe)
+- ✅ T-403 Deploy Docker na VPS pelo IP externo (`scripts/deploy.sh`, v0.4.0) · 💡 falta domínio + HTTPS/WSS e métricas
+- ✅ T-405 Jogabilidade pela internet: atraso adaptativo ao jitter, ping na tela, gzip/ETag, limite por IP (v0.4.0)
 - 💡 T-404 Moderação: kick/mute por admin, rate limit por IP

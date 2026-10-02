@@ -12,8 +12,9 @@ import { drawFighter, FIGHTER_TOP } from '../render/fighter.js';
 import { prerenderDojo, drawSensei, drawGong, DOJO, SENSEI } from '../render/dojo.js';
 import { outlinedText, roundRect, FONT, INK } from '../render/paint.js';
 import { play } from '../audio.js';
+import { AdaptiveDelay } from '../jitter.js';
 
-const STATE_DELAY_MS = 80;
+const STATE_DELAY_MS = 60; // mínimo; cresce sozinho se a rede tiver jitter
 const RESEND_MS = 150;
 
 const ACTION_KEYS = {
@@ -66,6 +67,7 @@ export class KarateClient {
     this.stick = { x: 0, y: 0 }; // joystick do celular
     this.touchBlock = false;
     this.ui = null;
+    this.delay = new AdaptiveDelay({ interval: 1000 / 30, min: STATE_DELAY_MS, max: 240 });
     this.reset();
   }
 
@@ -171,6 +173,7 @@ export class KarateClient {
   onState(s, now) {
     if (!this.fight || s.f.length !== 2) return;
     s.at = now;
+    this.delay.arrive(now);
     s.by = {};
     for (const f of s.f) {
       s.by[f[0]] = { id: f[0], x: f[1], y: f[2], dir: f[3], st: f[4], t: f[5], hp: f[6], dashCd: f[7], slowT: f[8], combo: f[9], moving: !!f[10] };
@@ -548,7 +551,7 @@ export class KarateClient {
 
   sample(now) {
     const buf = this.buf;
-    const at = now - STATE_DELAY_MS;
+    const at = now - this.delay.get();
     let a = buf[0];
     let b = buf[0];
     for (let i = buf.length - 1; i > 0; i--) {
@@ -596,7 +599,9 @@ export class KarateClient {
     }
     const la = this.localAct;
     if (la) {
-      if (meS.st === la.a || (!isFree(meS.st) && meS.st !== 'dash') || now - la.at > 300) this.localAct = null;
+      // espera a confirmação do servidor por pelo menos um "ping" (rede lenta não repete a animação)
+      const wait = Math.max(300, (this.game.rtt || 0) + 150);
+      if (meS.st === la.a || (!isFree(meS.st) && meS.st !== 'dash') || now - la.at > wait) this.localAct = null;
       else {
         st = la.a;
         t = (now - la.at) / 1000;
@@ -608,10 +613,11 @@ export class KarateClient {
       const ex = meS.x - p.x;
       const ey = meS.y - p.y;
       const err = Math.hypot(ex, ey);
-      if (err > 90) { p.x = meS.x; p.y = meS.y; }
+      // andando, o servidor está "atrás" de nós uns rtt/2 × velocidade: isso não é erro
+      const lag = KT.SPEED * ((this.game.rtt || 0) / 1000) * 0.6;
+      if (err > 90 + lag) { p.x = meS.x; p.y = meS.y; }
       else {
-        // andando: só corrige erros grandes (o servidor está "atrás" pela latência)
-        const g = moved ? (err > 28 ? 3 : 0) : 6;
+        const g = moved ? (err > 28 + lag ? 3 : 0) : 6;
         p.x += ex * Math.min(1, dt * g);
         p.y += ey * Math.min(1, dt * g);
       }

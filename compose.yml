@@ -1,0 +1,26 @@
+# Produção na VPS: docker compose up -d --build   (ver docs/DEPLOY.md)
+# Acesso pelo IP externo: http://<IP-DA-VPS>:${GAME_PORT:-3000}
+name: niltonpark
+
+services:
+  game:
+    build: .
+    image: niltonpark:latest
+    container_name: niltonpark
+    restart: unless-stopped
+    ports:
+      - "${GAME_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+    # a VPS roda outros sistemas: o jogo não pode roubar recursos deles
+    mem_limit: 256m
+    cpus: 1.0
+    pids_limit: 100
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

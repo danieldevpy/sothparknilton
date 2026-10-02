@@ -10,8 +10,9 @@ import {
 import { drawBall } from '../render/world.js';
 import { outlinedText, roundRect, INK } from '../render/paint.js';
 import { play } from '../audio.js';
+import { AdaptiveDelay } from '../jitter.js';
 
-const STATE_DELAY_MS = 70;
+const STATE_DELAY_MS = 70; // mínimo; cresce sozinho se a rede tiver jitter
 const SEND_EVERY_MS = 50;
 
 // texto, cor, subtítulo, som, tremida
@@ -34,6 +35,7 @@ export class GolAGolClient {
     this.match = null;
     this.touchMode = false; // mobile: toque só mira; força vem do botão CHUTAR
     this.axisY = 0; // joystick virtual (mobile), -1..1
+    this.delay = new AdaptiveDelay({ interval: 1000 / 30, min: STATE_DELAY_MS, max: 260 });
     this.reset();
   }
 
@@ -127,6 +129,7 @@ export class GolAGolClient {
 
   onState(s, now) {
     s.at = now;
+    this.delay.arrive(now);
     this.buf.push(s);
     if (this.buf.length > 12) this.buf.shift();
     const prev = this.prevPhase;
@@ -274,7 +277,7 @@ export class GolAGolClient {
   sample(now) {
     const buf = this.buf;
     if (!buf.length) return null;
-    const at = now - STATE_DELAY_MS;
+    const at = now - this.delay.get();
     let a = buf[0];
     let b = buf[0];
     for (let i = buf.length - 1; i > 0; i--) {

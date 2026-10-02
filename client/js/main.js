@@ -25,6 +25,13 @@ function saveProfile(p) {
 }
 
 const saved = loadProfile();
+const AUTO_KEY = 'np.autologin';
+const AUTO_MAX = 8;
+let autoTry = 0;
+try {
+  autoTry = Number(sessionStorage.getItem(AUTO_KEY)) || 0;
+  sessionStorage.removeItem(AUTO_KEY);
+} catch { /* sem storage */ }
 const rand = (list) => list[Math.floor(Math.random() * list.length)];
 const look = {
   hat: PALETTE.hats.includes(saved.look?.hat) ? saved.look.hat : rand(PALETTE.hats),
@@ -116,11 +123,16 @@ $('#login-form').addEventListener('submit', (ev) => {
       game.onMessage(msg);
     },
     onClose: () => {
-      if (started) $('#disconnected').hidden = false;
+      if (started) showDisconnected();
       else {
         btn.disabled = false;
         btn.textContent = 'Entrar na praça!';
         if (!err.textContent) err.textContent = 'Não foi possível conectar ao servidor.';
+        // reconexão automática que falhou (servidor reiniciando/sem rede): tenta de novo
+        if (autoTry && autoTry < AUTO_MAX) {
+          err.textContent = `Servidor fora do ar... tentando de novo (${autoTry}/${AUTO_MAX})`;
+          setTimeout(() => reconnect(autoTry + 1), 3000);
+        }
       }
     },
   });
@@ -136,6 +148,10 @@ function start() {
     ? 'Bem-vindo! Use o joystick ou toque no chão para andar. Toque nas coisas e nos players!'
     : 'Bem-vindo! Clique no chão para andar, clique nas coisas para interagir.');
   setupInput(game, hud, canvas);
+  // latência (ping/pong) a cada 2 s — aparece no canto da tela
+  const ping = () => game.send({ t: MSG.PING, n: Math.round(performance.now()) });
+  ping();
+  setInterval(ping, 2000);
   const mobileUi = IS_MOBILE ? setupMobile(game, hud) : null;
   if (location.hostname === 'localhost') window.__mobile = mobileUi; // debug
   const loop = () => {
@@ -146,4 +162,32 @@ function start() {
   requestAnimationFrame(loop);
 }
 
-$('#reconnect-btn').addEventListener('click', () => location.reload());
+// ---------- reconexão ----------
+// Caiu a conexão (rede do celular, deploy novo...): recarrega e entra sozinho com o
+// mesmo nick/visual salvos. Se o servidor ainda não voltou, tenta algumas vezes.
+
+function reconnect(attempt = 1) {
+  try { sessionStorage.setItem(AUTO_KEY, String(attempt)); } catch { /* sem storage */ }
+  location.reload();
+}
+
+function showDisconnected() {
+  const box = $('#disconnected');
+  if (!box.hidden) return;
+  box.hidden = false;
+  const p = box.querySelector('p');
+  let n = 3;
+  const tick = () => {
+    p.textContent = `O servidor sumiu ou a internet tropeçou. Voltando em ${n}...`;
+    if (n-- <= 0) reconnect();
+    else setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+$('#reconnect-btn').addEventListener('click', () => reconnect());
+
+if (autoTry && saved.nick) {
+  // entra automaticamente depois de recarregar
+  setTimeout(() => $('#login-form').requestSubmit(), 150);
+}

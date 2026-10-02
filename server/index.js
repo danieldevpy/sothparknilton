@@ -1,7 +1,8 @@
 // Entrada do servidor: HTTP estático (client/ e shared/) + WebSocket em /ws.
 
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { WebSocketServer } from 'ws';
@@ -24,8 +25,35 @@ const MIME = {
 };
 
 const HELLO_TIMEOUT_MS = 10_000;
-const HEARTBEAT_MS = 15_000;
+const HEARTBEAT_MS = 10_000; // conexão morta (celular sem sinal) sai da sala em ~10–20 s
 const MSG_BUDGET_PER_SEC = 40; // mensagens por segundo por conexão
+const MAX_CONN_PER_IP = 12; // várias abas/aparelhos na mesma casa, mas não um flood
+const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.svg', '.json']);
+const VERSION = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8')).version;
+const STARTED_AT = Date.now();
+
+// Cache em memória dos arquivos estáticos: gzip pronto + ETag. Revalida pelo mtime,
+// então funciona igual em dev (arquivo mudou → conteúdo novo) e em produção.
+const fileCache = new Map();
+
+async function loadFile(file) {
+  const st = await stat(file);
+  if (!st.isFile()) throw new Error('not a file');
+  let c = fileCache.get(file);
+  if (!c || c.mtimeMs !== st.mtimeMs || c.size !== st.size) {
+    const raw = await readFile(file);
+    const gz = COMPRESSIBLE.has(path.extname(file)) ? gzipSync(raw, { level: 9 }) : null;
+    c = {
+      mtimeMs: st.mtimeMs,
+      size: st.size,
+      etag: `"${st.size.toString(16)}-${Math.floor(st.mtimeMs).toString(16)}"`,
+      raw,
+      gz: gz && gz.length < raw.length ? gz : null,
+    };
+    fileCache.set(file, c);
+  }
+  return c;
+}
 
 async function serveStatic(req, res) {
   const url = new URL(req.url, 'http://x');
@@ -40,12 +68,24 @@ async function serveStatic(req, res) {
     return;
   }
   try {
-    const data = await readFile(file);
-    res.writeHead(200, {
+    const c = await loadFile(file);
+    // no-cache = sempre revalida (deploy novo aparece na hora), mas com ETag a resposta é um 304 vazio
+    const headers = {
       'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
       'Cache-Control': 'no-cache',
-    });
-    res.end(data);
+      ETag: c.etag,
+      Vary: 'Accept-Encoding',
+    };
+    if (req.headers['if-none-match'] === c.etag) {
+      res.writeHead(304, headers).end();
+      return;
+    }
+    const gzip = c.gz && /\bgzip\b/.test(req.headers['accept-encoding'] || '');
+    if (gzip) headers['Content-Encoding'] = 'gzip';
+    const body = gzip ? c.gz : c.raw;
+    headers['Content-Length'] = body.length;
+    res.writeHead(200, headers);
+    res.end(req.method === 'HEAD' ? undefined : body);
   } catch {
     res.writeHead(404).end('not found');
   }
@@ -57,15 +97,35 @@ export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.
   const server = http.createServer((req, res) => {
     if (req.url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, players: room.players.size }));
+      res.end(JSON.stringify({
+        ok: true,
+        version: VERSION,
+        players: room.players.size,
+        fights: room.fights.size,
+        match: !!room.match,
+        uptime: Math.round((Date.now() - STARTED_AT) / 1000),
+      }));
       return;
     }
     serveStatic(req, res);
   });
 
-  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 4096 });
+  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 4096, perMessageDeflate: false });
+  const perIp = new Map();
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, req) => {
+    const ip = req.socket.remoteAddress || '?';
+    const n = (perIp.get(ip) || 0) + 1;
+    perIp.set(ip, n);
+    ws.once('close', () => {
+      const left = (perIp.get(ip) || 1) - 1;
+      if (left > 0) perIp.set(ip, left);
+      else perIp.delete(ip);
+    });
+    if (n > MAX_CONN_PER_IP) {
+      ws.close(4002, 'too many connections');
+      return;
+    }
     let playerId = null;
     let budget = MSG_BUDGET_PER_SEC;
     let budgetAt = Date.now();
@@ -151,5 +211,13 @@ export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.PORT) || 3000;
   const game = createGameServer({ port });
-  game.ready.then((p) => console.log(`Nilton Park rodando em http://localhost:${p}`));
+  game.ready.then((p) => console.log(`Nilton Park v${VERSION} rodando em http://localhost:${p}`));
+  // docker stop / systemctl stop: fecha as conexões na hora (os clientes reconectam sozinhos)
+  for (const sig of ['SIGTERM', 'SIGINT']) {
+    process.once(sig, () => {
+      console.log(`[${sig}] encerrando...`);
+      game.close().finally(() => process.exit(0));
+      setTimeout(() => process.exit(0), 3000).unref();
+    });
+  }
 }

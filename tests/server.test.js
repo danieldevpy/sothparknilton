@@ -80,3 +80,39 @@ test('hello inválido recebe erro fatal', async () => {
     await game.close();
   }
 });
+
+test('produção: gzip, ETag/304, /health com versão e ping/pong', async () => {
+  const game = createGameServer({ port: 0, host: '127.0.0.1', log: () => {} });
+  const port = await game.ready;
+  const http = await import('node:http');
+  const get = (p, headers = {}) => new Promise((resolve, reject) => {
+    http.get({ host: '127.0.0.1', port, path: p, headers }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
+    }).on('error', reject);
+  });
+  try {
+    const plain = await get('/js/game.js');
+    const gz = await get('/js/game.js', { 'accept-encoding': 'gzip' });
+    assert.equal(gz.headers['content-encoding'], 'gzip');
+    assert.ok(gz.body.length < plain.body.length / 2, 'gzip deveria reduzir bem o JS');
+    const again = await get('/js/game.js', { 'if-none-match': gz.headers.etag });
+    assert.equal(again.status, 304);
+    assert.equal((await get('/js')).status, 404, 'diretório não é servido');
+
+    const health = JSON.parse((await get('/health')).body);
+    assert.equal(health.ok, true);
+    assert.match(health.version, /^\d+\.\d+\.\d+$/);
+
+    const c = client(port);
+    await c.open;
+    c.send({ t: MSG.HELLO, nick: 'Ping' });
+    await c.waitFor((m) => m.t === MSG.WELCOME);
+    c.send({ t: MSG.PING, n: 123 });
+    assert.equal((await c.waitFor((m) => m.t === MSG.PONG)).n, 123);
+    c.ws.close();
+  } finally {
+    await game.close();
+  }
+});
