@@ -7,7 +7,12 @@
 ### Como trocar um objeto procedural por sprite
 Cada objeto tem uma função de desenho com a origem na **base** (pés/chão):
 `drawTree`, `drawBench`, `drawLamp`, `drawFountain`, `drawBleachers`, `drawSign` (`render/world.js`),
-`drawBall`, `drawDuck`, `drawCharacter` (`render/character.js`).
+`drawBall`, `drawDuck`, `drawCharacter` (`render/character.js`), `drawFighter` (`render/fighter.js`, karatê),
+`prerenderDojo`/`drawGong`/`drawSensei` (`render/dojo.js`).
+
+O lutador é montado a partir de uma "pose" (inclinação, posição dos punhos e pés, olhos, boca) calculada por
+estado/tempo do golpe em `poseOf()` — dá para trocar por sprites por pose (`jab`, `punch`, `kick`, `hkick`, `block`,
+`hit`, `stun`, `down`, `ko`, `win`) mantendo a mesma assinatura.
 
 ```js
 // exemplo: trocar a árvore
@@ -41,7 +46,8 @@ Sugestão para os próximos assets: gerar **folhas de referência** (um objeto p
 
 ## Sons
 Sintetizados em `client/js/audio.js` (WebAudio). Para trocar por arquivos, reimplemente `play(name)` mantendo os nomes:
-`chat, join, quack, splash, coin, fart, boing, click, goal, lamp`.
+`chat, join, quack, splash, coin, fart, boing, click, goal, lamp` (+ Gol a Gol e `kt_swing, kt_hit, kt_heavy, kt_block,
+kt_parry, kt_break, kt_dash, kt_down, kt_gong` do Karatê).
 
 ## Fonte
 "Comic Neue" (Google Fonts), fallback Comic Sans MS.

@@ -72,6 +72,16 @@ const SOUNDS = {
   win: () => [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tone({ type: 'square', from: f, dur: 0.16, vol: 0.06, delay: i * 0.11 })),
   lose: () => [392, 370, 349, 262].forEach((f, i) => tone({ type: 'triangle', from: f, to: f * 0.97, dur: 0.35, vol: 0.07, delay: i * 0.3 })),
   invite: () => { tone({ type: 'square', from: 700, dur: 0.08, vol: 0.05 }); tone({ type: 'square', from: 1050, dur: 0.12, vol: 0.05, delay: 0.1 }); },
+  // Karatê
+  kt_swing: () => noise({ dur: 0.1, vol: 0.06, freq: 3500 }),
+  kt_hit: () => { tone({ type: 'square', from: 240, to: 90, dur: 0.07, vol: 0.1 }); noise({ dur: 0.07, vol: 0.18, freq: 1800 }); },
+  kt_heavy: () => { tone({ type: 'sine', from: 150, to: 40, dur: 0.25, vol: 0.28 }); noise({ dur: 0.16, vol: 0.24, freq: 1300 }); },
+  kt_block: () => { tone({ type: 'triangle', from: 620, to: 420, dur: 0.06, vol: 0.08 }); noise({ dur: 0.05, vol: 0.1, freq: 4000 }); },
+  kt_parry: () => { tone({ type: 'sine', from: 1568, dur: 0.45, vol: 0.08 }); tone({ type: 'sine', from: 2093, dur: 0.55, vol: 0.06, delay: 0.06 }); },
+  kt_break: () => { noise({ dur: 0.3, vol: 0.25, freq: 2600 }); tone({ type: 'sawtooth', from: 320, to: 60, dur: 0.3, vol: 0.1 }); },
+  kt_dash: () => { noise({ dur: 0.16, vol: 0.09, freq: 5000 }); tone({ type: 'sine', from: 300, to: 900, dur: 0.12, vol: 0.04 }); },
+  kt_down: () => { tone({ type: 'sine', from: 90, to: 38, dur: 0.35, vol: 0.3 }); noise({ dur: 0.3, vol: 0.14, freq: 500 }); },
+  kt_gong: () => { [110, 166, 222].forEach((f, i) => tone({ type: 'sine', from: f, to: f * 0.98, dur: 2.2, vol: 0.13 - i * 0.03 })); noise({ dur: 0.35, vol: 0.08, freq: 900 }); },
 };
 
 export function play(name) {

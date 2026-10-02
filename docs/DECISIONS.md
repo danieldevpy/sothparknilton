@@ -56,3 +56,25 @@ Elementos comuns (chat, lista, placar) são movidos para os painéis mobile em v
 
 **D-015 — Na partida, câmera não respeita a borda do mapa.** (2026-10-01)
 Centralizar o campo é mais importante que não mostrar "fora do mapa"; em paisagem os botões cobriam o gol direito.
+
+**D-014 — Karatê acontece numa instância (dojo) separada da praça.** (2026-10-01)
+Pedido: luta "longe das outras pessoas", arena 1x1. Instância permite várias lutas simultâneas, não disputa espaço
+no mapa e só manda estado para os dois lutadores. → Ninguém assiste ao vivo (por enquanto: ver T-325 espectador).
+
+**D-015 — Visão 2.5D tipo beat 'em up com auto-mira no oponente.** (2026-10-01)
+Combina com o render existente (bonecos de frente, ordenação por Y) e dispensa mira: o jogador só pensa em
+distância, profundidade e tempo. Golpe acerta à frente + faixa de profundidade (`band`).
+
+**D-016 — Golpes simultâneos trocam; K.O. duplo é sorteado.** (2026-10-01)
+O simulador mostrou viés de 100% para quem era processado primeiro no tick. Acertos agora são calculados depois que
+os dois lutadores andaram, com o golpe de cada um capturado antes de aplicar.
+
+**D-017 — Equilíbrio por simulação de estilos (`scripts/karate-balance.js`).** (2026-10-01)
+1ª versão: só-chute-fraco vencia tudo 100% e só-soco-fraco vencia o misto. Ajustes: chute fraco mais lento
+(0,15/0,10/0,30 s, hitstun 0,26) e push 20; soco fraco dano 5→4 e hitstun 0,30→0,22 (neutro no acerto sem combo);
+combo máximo 5→4. Por fim, regra **PREVISÍVEL** (repetir golpe perde até 50% do dano), que fez o misto vencer
+os estilos de um golpe só e dividiu o dano entre os 4 golpes.
+
+**D-018 — Cliente prevê o próprio lutador, interpola o oponente.** (2026-10-01)
+Luta precisa de resposta imediata: andar, dash e o começo do golpe aparecem na hora; o servidor decide acertos.
+Oponente com 80 ms de atraso (como o Gol a Gol, D-011).

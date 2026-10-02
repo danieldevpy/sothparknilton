@@ -11,6 +11,7 @@ import { FxLayer } from './render/fx.js';
 import { outlinedText, roundRect, FONT } from './render/paint.js';
 import { play } from './audio.js';
 import { GolAGolClient } from './minigames/golagol.js';
+import { KarateClient } from './minigames/karate.js';
 
 const BUF_MAX = 12;
 
@@ -32,6 +33,7 @@ export class Game {
     this.shakeAmp = 0;
     this.shakeAt = 0;
     this.gg = new GolAGolClient(this, hud);
+    this.kt = new KarateClient(this, hud);
     this.bg = prerenderBackground(MAP);
     this.sprites = mapSprites(MAP, this.world);
     this.zone = null;
@@ -50,6 +52,7 @@ export class Game {
 
   onMessage(msg) {
     const now = performance.now();
+    if (this.kt.onMessage(msg, now)) return;
     if (this.gg.onMessage(msg, now)) return;
     switch (msg.t) {
       case MSG.WELCOME:
@@ -140,6 +143,8 @@ export class Game {
     p.talkUntil = now + Math.min(3000, 400 + msg.text.length * 55);
     this.hud.log(p.nick, msg.text, msg.id === this.me);
     play('chat');
+    this.kt.onChat(msg, now);
+    if (this.kt.active() || this.kt.hidden(msg.id)) return; // fala do dojo não vira balão na praça
     // celular jogando: só balões dos dois jogadores (a plateia fica no chat)
     if (this.compactBubbles && this.gg.isPlaying() && !this.gg.inMatch(msg.id)) return;
     const sy = (p.r.y + headTop(p.r.pose) - 26 - this.cam.y) * this.cam.z;
@@ -196,8 +201,9 @@ export class Game {
       const sx = (p.r.x - this.cam.x) * this.cam.z;
       const sy = (p.r.y - 60 - this.cam.y) * this.cam.z;
       this.hud.playerCard(p, sx, sy, {
-        busy: this.gg.inMatch(p.id) || this.gg.isPlaying(),
+        busy: this.gg.inMatch(p.id) || this.gg.isPlaying() || this.kt.hidden(p.id),
         onChallenge: () => this.gg.challenge(p.id),
+        onKarate: () => this.kt.challenge(p.id),
         onWave: () => this.emote('wave'),
       });
       play('click');
@@ -232,12 +238,12 @@ export class Game {
     const t = performance.now() / 1000;
     let best = null;
     for (const p of this.players.values()) {
-      if (p.id === this.me) continue;
+      if (p.id === this.me || this.kt.hidden(p.id)) continue;
       if (Math.abs(wx - p.r.x) < 24 && wy > p.r.y - 95 && wy < p.r.y + 8 && (!best || p.r.y > best.r.y)) best = p;
     }
     if (best) {
       const playing = this.gg.inMatch(best.id);
-      return { id: 'player', pid: best.id, label: playing ? `${best.nick} — jogando Gol a Gol` : `${best.nick} — clique para desafiar ⚽` };
+      return { id: 'player', pid: best.id, label: playing ? `${best.nick} — jogando Gol a Gol` : `${best.nick} — clique para desafiar ⚽🥋` };
     }
     for (const d of duckPositions(t)) {
       if (Math.hypot(wx - d.x, wy - (d.y - 10)) < 24) return { id: 'duck', label: 'Pato — quack!', x: Math.round(d.x), y: Math.round(d.y) };
@@ -337,6 +343,11 @@ export class Game {
     if (window.innerWidth !== this.vw || window.innerHeight !== this.vh) this.resize();
     const t = now / 1000;
     const renderAt = now - INTERP_DELAY_MS;
+    // lutando no dojo: a cena é outra (ver minigames/karate.js)
+    if (this.kt.active()) {
+      this.kt.frame(dt, now);
+      return;
+    }
 
     for (const p of this.players.values()) {
       const s = this.sample(p.buf, renderAt);
@@ -394,6 +405,7 @@ export class Game {
     // y-sort: objetos do mapa + players + bola
     const list = [...this.sprites];
     for (const p of this.players.values()) {
+      if (this.kt.hidden(p.id)) continue; // lutando no dojo
       list.push({ y: p.r.y, draw: () => this.drawPlayer(p, now, t) });
     }
     const b = this.ballPos();
@@ -405,7 +417,7 @@ export class Game {
 
     this.gg.drawOverlay(ctx, now);
     this.fx.draw(ctx, now);
-    for (const p of this.players.values()) this.drawNick(p);
+    for (const p of this.players.values()) if (!this.kt.hidden(p.id)) this.drawNick(p);
 
     // camada de tela
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);

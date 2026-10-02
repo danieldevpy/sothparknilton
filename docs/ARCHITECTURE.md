@@ -78,6 +78,27 @@
   (senão o gol direito fica atrás dos botões em paisagem). Fora do mapa é pintado de neve.
 - Balões: cortados abaixo da barra do topo (`game.bubbleTop`); jogando no celular só aparecem balões dos dois jogadores.
 
+## Minigame Karatê (dojo separado)
+```
+ Room.onChallenge(game:'karate') ── aceite ──▶ startFight() ──▶ KarateFight (server/minigames/Karate.js)
+   room.fights: Map(id → luta)   room.fightOf: Map(playerId → luta)   isBusy(id) = Gol a Gol ou luta
+   tick(): cada luta → step (lutadores) → acertos dos dois (troca justa) → K.O. → kt_state só p/ os 2
+   endFight() ◀── finish()/forfeit() — pose volta a '' e o player reaparece onde estava na praça
+ shared/karate.js → KT, MOVES, walkStep/dashVector/inReach (mesmo código no servidor e na predição)
+ client/js/minigames/karate.js → KarateClient: cena própria; Game.frame() desvia para kt.frame() quando ativo
+```
+- **Instância**: a arena tem coordenadas próprias (0..900 × 0..260); a posição do player na praça fica congelada
+  (`pose='dojo'`). Por isso dá para ter **várias lutas ao mesmo tempo** (diferente do campinho do Gol a Gol).
+- **Banda**: `kt_state`/`kt_event` vão só para os dois lutadores; a sala recebe só `kt_start`/`kt_end`.
+- **Golpe = máquina de estados** (startup → active → recovery) com tempos em `MOVES`. Entrada vira **buffer** (0,18 s)
+  se o lutador estiver ocupado; golpe com `chain` que acertou pode cancelar a recuperação.
+- **Acertos depois do passo dos dois**: golpes ativos no mesmo tick trocam (os dois acertam); K.O. duplo é sorteado.
+- **Cliente**: o próprio lutador é **previsto** (anda/dash/início do golpe na hora, converge para o servidor; erros
+  grandes andando são corrigidos devagar porque o servidor está "atrás" pela latência); o oponente é **interpolado**
+  com 80 ms de atraso e `t` extrapolado para as animações ficarem lisas. Hit-stop é só visual.
+- **UI**: `#kt-ui` (ajuda de golpes no desktop, controles de toque no celular) é filho do `body` com z-index acima do
+  `#m-ui`; `body.kt-on` esconde o que é da praça.
+
 ## Performance (MVP)
 - Render ~0,5 ms/frame em desktop (medido com 1–3 players).
 - Rede: snapshot ≈ 25 bytes/player × 15 Hz. Para 100 players ≈ 37 KB/s por cliente — ok para MVP; ver ROADMAP (delta/área de interesse) para escalar.

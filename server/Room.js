@@ -2,7 +2,7 @@
 // função `send(string)`. Isso deixa a lógica testável sem rede (tests/room.test.js).
 
 import {
-  MSG, PROTOCOL_VERSION, PLAYER_SPEED, PLAYER_RADIUS, MAX_PLAYERS, CHAT_COOLDOWN_MS, EMOTES,
+  MSG, GAMES, PROTOCOL_VERSION, PLAYER_SPEED, PLAYER_RADIUS, MAX_PLAYERS, CHAT_COOLDOWN_MS, EMOTES,
   BALL_RADIUS, BALL_KICK_SPEED, BALL_FRICTION, GOAL_RESET_MS,
 } from '../shared/constants.js';
 import { MAP, benchSeats } from '../shared/map.js';
@@ -10,6 +10,7 @@ import { isWalkable, inLake, dist } from '../shared/geometry.js';
 import { PathGrid } from '../shared/pathfinding.js';
 import { GG } from '../shared/golagol.js';
 import { GolAGol } from './minigames/GolAGol.js';
+import { KarateFight } from './minigames/Karate.js';
 import { sanitizeNick, sanitizeChat, sanitizeLook } from '../shared/validation.js';
 
 const ARRIVE_TOLERANCE = 40; // px: distância máxima para executar a interação pendente
@@ -29,7 +30,10 @@ export class Room {
     this.ball = { x: 0, y: 0, vx: 0, vy: 0, resetAt: 0, lastKicker: null, hidden: false };
     this.resetBall();
     this.match = null; // partida de Gol a Gol em andamento (uma por vez no campinho)
-    this.invites = new Map(); // `${from}>${to}` -> { from, to, at, rematch }
+    this.invites = new Map(); // `${from}>${to}` -> { from, to, at, rematch, game }
+    this.fights = new Map(); // lutas de Karatê (várias ao mesmo tempo: cada uma no seu dojo)
+    this.fightOf = new Map(); // playerId -> luta
+    this.nextFightId = 1;
   }
 
   // ---------- ciclo de vida de players ----------
@@ -69,6 +73,7 @@ export class Room {
       score: this.score,
       ball: this.ballPublic(),
       match: this.match ? this.match.publicInfo() : null,
+      fights: [...this.fights.values()].map((f) => f.publicInfo()),
     }));
     this.broadcast({ t: MSG.JOIN, player: publicPlayer(p) }, p.id);
     return { player: p };
@@ -79,11 +84,12 @@ export class Room {
     if (!p) return;
     this.leaveSeat(p);
     if (this.match?.has(id)) this.match.forfeit(id);
+    this.fightOf.get(id)?.forfeit(id);
     for (const [key, inv] of this.invites) {
       if (inv.from === id || inv.to === id) {
         this.invites.delete(key);
         const other = this.players.get(inv.from === id ? inv.to : inv.from);
-        if (other) this.sendTo(other, { t: MSG.CH_STATUS, status: 'gone', with: id, nick: p.nick });
+        if (other) this.sendTo(other, { t: MSG.CH_STATUS, status: 'gone', with: id, nick: p.nick, game: inv.game });
       }
     }
     this.players.delete(id);
@@ -117,9 +123,10 @@ export class Room {
     const p = this.players.get(id);
     if (!p || !msg || typeof msg.t !== 'string') return;
     const inMatch = !!this.match?.has(id);
+    const busy = this.isBusy(id); // jogando Gol a Gol ou lutando no dojo
     switch (msg.t) {
       case MSG.MOVE:
-        if (!inMatch && isNum(msg.x) && isNum(msg.y)) this.walkTo(p, msg.x, msg.y, null);
+        if (!busy && isNum(msg.x) && isNum(msg.y)) this.walkTo(p, msg.x, msg.y, null);
         break;
       case MSG.CHALLENGE:
         this.onChallenge(p, msg);
@@ -131,6 +138,10 @@ export class Room {
       case MSG.GG_SHOOT:
         if (inMatch) this.match.handle(p, msg);
         break;
+      case MSG.KT_INPUT:
+      case MSG.KT_ACT:
+        this.fightOf.get(id)?.handle(p, msg);
+        break;
       case MSG.CHAT:
         this.onChat(p, msg.text);
         break;
@@ -138,20 +149,25 @@ export class Room {
         this.onEmote(p, msg.e);
         break;
       case MSG.INTERACT:
-        if (!inMatch) this.onInteract(p, msg);
+        if (!busy) this.onInteract(p, msg);
         break;
       default:
         break;
     }
   }
 
-  // ---------- desafios (Gol a Gol) ----------
+  // ---------- desafios (Gol a Gol / Karatê) ----------
+
+  isBusy(id) {
+    return !!this.match?.has(id) || this.fightOf.has(id);
+  }
 
   onChallenge(p, msg) {
     const target = this.players.get(msg.to);
-    const status = (s, extra = {}) => this.sendTo(p, { t: MSG.CH_STATUS, status: s, with: msg.to, nick: target?.nick, ...extra });
+    const game = GAMES.includes(msg.game) ? msg.game : 'golagol';
+    const status = (s, extra = {}) => this.sendTo(p, { t: MSG.CH_STATUS, status: s, with: msg.to, nick: target?.nick, game, ...extra });
     if (!target || target.id === p.id) return status('invalid');
-    if (this.match?.has(p.id) || this.match?.has(target.id)) return status('busy');
+    if (this.isBusy(p.id) || this.isBusy(target.id)) return status('busy');
     const now = this.now();
     // um convite pendente por desafiante: o novo substitui o antigo
     for (const [key, inv] of this.invites) if (inv.from === p.id) this.invites.delete(key);
@@ -161,8 +177,8 @@ export class Room {
       this.onChallengeReply(p, { from: target.id, accept: true });
       return undefined;
     }
-    this.invites.set(`${p.id}>${target.id}`, { from: p.id, to: target.id, at: now, rematch: !!msg.rematch });
-    this.sendTo(target, { t: MSG.CHALLENGE, from: p.id, nick: p.nick, rematch: !!msg.rematch, ttl: GG.INVITE_TTL_MS });
+    this.invites.set(`${p.id}>${target.id}`, { from: p.id, to: target.id, at: now, rematch: !!msg.rematch, game });
+    this.sendTo(target, { t: MSG.CHALLENGE, from: p.id, nick: p.nick, rematch: !!msg.rematch, ttl: GG.INVITE_TTL_MS, game });
     return status('sent');
   }
 
@@ -171,23 +187,30 @@ export class Room {
     const inv = this.invites.get(key);
     const from = this.players.get(msg.from);
     if (!inv || !from) {
-      this.sendTo(p, { t: MSG.CH_STATUS, status: 'expired', with: msg.from, nick: from?.nick });
+      this.sendTo(p, { t: MSG.CH_STATUS, status: 'expired', with: msg.from, nick: from?.nick, game: inv?.game });
       return;
     }
     this.invites.delete(key);
+    const { game } = inv;
     if (!msg.accept) {
-      this.sendTo(from, { t: MSG.CH_STATUS, status: 'declined', with: p.id, nick: p.nick });
+      this.sendTo(from, { t: MSG.CH_STATUS, status: 'declined', with: p.id, nick: p.nick, game });
       return;
     }
-    if (this.match) {
-      for (const [a, b] of [[from, p], [p, from]]) this.sendTo(a, { t: MSG.CH_STATUS, status: 'field_busy', with: b.id, nick: b.nick });
+    // alguém entrou em outra partida enquanto o convite esperava
+    if (this.isBusy(from.id) || this.isBusy(p.id)) {
+      for (const [a, b] of [[from, p], [p, from]]) this.sendTo(a, { t: MSG.CH_STATUS, status: 'busy', with: b.id, nick: b.nick, game });
+      return;
+    }
+    if (game === 'golagol' && this.match) {
+      for (const [a, b] of [[from, p], [p, from]]) this.sendTo(a, { t: MSG.CH_STATUS, status: 'field_busy', with: b.id, nick: b.nick, game });
       return;
     }
     // limpa convites pendentes dos dois
     for (const [k, i] of this.invites) {
       if ([i.from, i.to].some((id) => id === p.id || id === from.id)) this.invites.delete(k);
     }
-    this.startMatch(from, p);
+    if (game === 'karate') this.startFight(from, p);
+    else this.startMatch(from, p);
   }
 
   startMatch(a, b) {
@@ -211,6 +234,30 @@ export class Room {
     this.resetBall();
   }
 
+  startFight(a, b) {
+    for (const pl of [a, b]) {
+      this.leaveSeat(pl);
+      pl.pending = null;
+      pl.path = [];
+    }
+    const fight = new KarateFight(this, a, b, this.nextFightId++);
+    this.fights.set(fight.id, fight);
+    this.fightOf.set(a.id, fight);
+    this.fightOf.set(b.id, fight);
+    return fight;
+  }
+
+  // lutadores voltam para a praça onde estavam
+  endFight(fight) {
+    if (this.fights.get(fight.id) !== fight) return;
+    this.fights.delete(fight.id);
+    for (const id of fight.ids) {
+      this.fightOf.delete(id);
+      const pl = this.players.get(id);
+      if (pl) pl.pose = '';
+    }
+  }
+
   expireInvites() {
     const now = this.now();
     for (const [key, inv] of this.invites) {
@@ -218,8 +265,8 @@ export class Room {
       this.invites.delete(key);
       const from = this.players.get(inv.from);
       const to = this.players.get(inv.to);
-      if (from) this.sendTo(from, { t: MSG.CH_STATUS, status: 'expired', with: inv.to, nick: to?.nick });
-      if (to) this.sendTo(to, { t: MSG.CH_STATUS, status: 'expired', with: inv.from, nick: from?.nick });
+      if (from) this.sendTo(from, { t: MSG.CH_STATUS, status: 'expired', with: inv.to, nick: to?.nick, game: inv.game });
+      if (to) this.sendTo(to, { t: MSG.CH_STATUS, status: 'expired', with: inv.from, nick: from?.nick, game: inv.game });
     }
   }
 
@@ -239,7 +286,7 @@ export class Room {
   onEmote(p, e) {
     if (!Object.hasOwn(EMOTES, e)) return;
     if (e === 'sit') {
-      if (p.seat || this.match?.has(p.id)) return; // já sentado / jogando
+      if (p.seat || this.isBusy(p.id)) return; // já sentado / jogando
       p.path = [];
       p.pending = null;
       p.pose = 'sit';
@@ -338,9 +385,10 @@ export class Room {
   // ---------- simulação ----------
 
   tick(dt) {
-    for (const p of this.players.values()) if (!this.match?.has(p.id)) this.stepPlayer(p, dt);
+    for (const p of this.players.values()) if (!this.isBusy(p.id)) this.stepPlayer(p, dt);
     if (!this.ball.hidden) this.stepBall(dt);
     this.match?.tick(dt);
+    for (const f of [...this.fights.values()]) f.tick(dt);
     if (this.invites.size) this.expireInvites();
   }
 

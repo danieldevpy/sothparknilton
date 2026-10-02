@@ -14,8 +14,14 @@ const EMOTE_BY_KEY = Object.fromEntries(Object.entries(EMOTES).map(([id, e]) => 
 export function setupInput(game, hud, canvas) {
   const held = new Set();
   const gg = game.gg;
+  const kt = game.kt;
 
   canvas.addEventListener('pointermove', (ev) => {
+    if (kt.active()) {
+      canvas.style.cursor = 'default';
+      hud.tooltip(null);
+      return;
+    }
     const w = game.screenToWorld(ev.clientX, ev.clientY);
     if (gg.pointerMove(w)) {
       game.world.hover = null;
@@ -34,6 +40,11 @@ export function setupInput(game, hud, canvas) {
   });
 
   canvas.addEventListener('pointerdown', (ev) => {
+    if (kt.active()) {
+      hud.blurChat();
+      kt.pointerDown(ev);
+      return;
+    }
     if (ev.button !== 0) return;
     hud.blurChat();
     hud.closePlayerCard();
@@ -48,6 +59,7 @@ export function setupInput(game, hud, canvas) {
     else game.moveTo(w.x, w.y);
   });
   window.addEventListener('pointerup', () => gg.pointerUp(performance.now()));
+  canvas.addEventListener('contextmenu', (ev) => { if (kt.active()) ev.preventDefault(); });
   canvas.addEventListener('wheel', (ev) => {
     if (gg.isPlaying() && gg.wheel(ev)) ev.preventDefault();
   }, { passive: false });
@@ -62,6 +74,10 @@ export function setupInput(game, hud, canvas) {
     if (ev.key === 'Enter') {
       ev.preventDefault();
       hud.focusChat();
+      return;
+    }
+    if (kt.key(ev, true, performance.now())) {
+      ev.preventDefault();
       return;
     }
     if (gg.key(ev, true, performance.now())) {
@@ -80,16 +96,18 @@ export function setupInput(game, hud, canvas) {
   });
   window.addEventListener('keyup', (ev) => {
     held.delete(ev.code);
+    kt.key(ev, false, performance.now());
     gg.key(ev, false, performance.now());
   });
   window.addEventListener('blur', () => {
     held.clear();
     gg.held.clear();
+    kt.clearKeys();
   });
 
   // enquanto segura uma direção, manda um destino curto à frente
   function steer() {
-    if (!held.size || gg.isPlaying()) return;
+    if (!held.size || gg.isPlaying() || kt.active()) return;
     const me = game.myServerPos();
     if (!me) return;
     let dx = 0;

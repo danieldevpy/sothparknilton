@@ -38,6 +38,21 @@ Clique em outro player → **Desafiar: Gol a Gol**. Cada um defende um gol e voc
 - Perdeu? Aparece o botão **Pedir revanche!**
 - Sem ninguém online? `node scripts/ggbot.js` cria um adversário-robô.
 
+## 🥋 Minigame: Karatê
+Clique em outro player → **Desafiar: Karatê**. Vocês vão para o **dojo** (longe da praça) e lutam 1x1, **melhor de 3**.
+
+| Tecla | Golpe | Vantagem |
+|---|---|---|
+| `J` / `Z` | Soco fraco | o mais rápido, encadeia combo |
+| `U` / `X` | Soco forte | quebra a defesa |
+| `K` / `C` | Chute fraco | alcance longo, deixa lento |
+| `I` / `V` | Chute forte | dano máximo, derruba |
+| `Shift` / `L` | Defesa (segurar) | levantar na hora H = **defesa perfeita** |
+| `Espaço` | Dash (a cada 3 s) | atravessa golpes; golpe logo depois = investida |
+
+Andar: WASD/setas. Repetir sempre o mesmo golpe deixa ele **previsível** (menos dano).
+Sem ninguém? `node scripts/ktbot.js` cria um adversário (`node scripts/ktbot.js SenseiBot SeuNick` te desafia).
+
 ## O mapa: Praça Central
 - **Praça** — fonte no centro, bancos, postes de luz.
 - **Lago** — patos nadando, píer, pedras para jogar na água.

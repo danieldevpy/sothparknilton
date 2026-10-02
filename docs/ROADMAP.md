@@ -41,6 +41,20 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - 🔜 T-314 Sons de narração engraçados ("ÉÉÉÉ DO BRASIL")
 - 🔜 T-315 Treino solo contra o GoleiroBot embutido no servidor
 
+## Fase 1C — Minigame Karatê ✅ (branch feature/karate, 2026-10-01)
+- ✅ T-320 Desafio com `game` (Gol a Gol / Karatê) no cartão do player, convites e revanche
+- ✅ T-321 `KarateFight` autoritativo: dojo separado, várias lutas simultâneas, melhor de 3, W.O.
+- ✅ T-322 Golpes com vantagens: soco fraco (rápido/combo), soco forte (quebra defesa), chute fraco (alcance/lento), chute forte (dano/derruba); defesa e defesa perfeita; dash a cada 3 s (invencível); contra-ataque, investida, combo, previsível
+- ✅ T-323 Cliente: cena do dojo + sensei, lutador de quimono com poses, predição, HUD de vida/rounds/dash, efeitos, controles teclado e toque
+- ✅ T-324 `ktbot.js`, `karate-ai.js`, `karate-balance.js`, 17 testes
+
+## Fase 1D — Karatê: próximos 🔜
+- 🔜 T-325 Assistir luta (espectador entra no dojo pelo cartão do lutador)
+- 🔜 T-326 Faixas (branca → preta) por vitórias, persistidas
+- 🔜 T-327 Golpe especial com barra de "ki" (enche ao apanhar/defender)
+- 🔜 T-328 Escolher o dojo/cenário e um "ring-out" na beira do tatame
+- 🔜 T-329 Treino solo contra o SenseiBot embutido no servidor (sem rodar script)
+
 ## Fase 1 — Polimento da sala 🔜
 - 🔜 T-101 Reconexão automática (sem recarregar) e manter sessão por alguns segundos
 - 🔜 T-102 Cartão do player: já tem desafiar/acenar (v0.2.0); falta seguir, perfil e sussurrar

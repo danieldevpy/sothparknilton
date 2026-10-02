@@ -142,7 +142,7 @@ export class Hud {
   // ---------- desafios / Gol a Gol ----------
 
   // Cartão ao clicar em outro player.
-  playerCard(p, sx, sy, { busy, onChallenge, onWave }) {
+  playerCard(p, sx, sy, { busy, onChallenge, onKarate, onWave }) {
     const card = $('#player-card');
     card.replaceChildren();
     const head = el('div', 'pc-head');
@@ -155,13 +155,16 @@ export class Hud {
     const btn = el('button', 'pc-challenge', busy ? '⚽ Está jogando...' : '⚽ Desafiar: Gol a Gol');
     btn.disabled = !!busy;
     btn.addEventListener('click', () => { onChallenge(); this.closePlayerCard(); });
+    const kt = el('button', 'pc-challenge pc-karate', busy ? '🥋 Ocupado...' : '🥋 Desafiar: Karatê');
+    kt.disabled = !!busy;
+    kt.addEventListener('click', () => { onKarate?.(); this.closePlayerCard(); });
     const wave = el('button', 'pc-wave', '👋 Acenar');
     wave.addEventListener('click', () => { onWave(); this.closePlayerCard(); });
-    card.append(head, btn, wave);
+    card.append(head, btn, kt, wave);
     card.hidden = false;
     const w = 220;
     card.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, sx - w / 2))}px`;
-    card.style.top = `${Math.max(8, Math.min(window.innerHeight - 150, sy - 150))}px`;
+    card.style.top = `${Math.max(8, Math.min(window.innerHeight - 190, sy - 190))}px`;
   }
 
   closePlayerCard() {
@@ -169,12 +172,13 @@ export class Hud {
   }
 
   // Convite de desafio recebido (empilha no canto).
-  invite({ from, nick, rematch, ttl, onAccept, onDecline }) {
+  // `title`/`sub` opcionais: outros minigames (ex.: karatê) trocam o texto.
+  invite({ from, nick, rematch, ttl, onAccept, onDecline, title: t, sub: s }) {
     this.removeInvite(from);
     const box = el('div', `invite${rematch ? ' rematch' : ''}`);
     box.dataset.from = from;
-    const title = el('div', 'inv-title', rematch ? `🔥 ${nick} quer REVANCHE!` : `⚽ ${nick} te desafiou!`);
-    const sub = el('div', 'inv-sub', 'Gol a Gol — primeiro gol vence');
+    const title = el('div', 'inv-title', t || (rematch ? `🔥 ${nick} quer REVANCHE!` : `⚽ ${nick} te desafiou!`));
+    const sub = el('div', 'inv-sub', s || 'Gol a Gol — primeiro gol vence');
     const row = el('div', 'inv-row');
     const yes = el('button', 'inv-yes', 'Aceitar');
     const no = el('button', 'inv-no', 'Recusar');

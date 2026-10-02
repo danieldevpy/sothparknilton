@@ -80,5 +80,41 @@ Duelo 1x1 no campinho da Área de Sports. Cada um defende um gol e eles **altern
 - Fonte da interface: Fredoka (arredondada); o mundo continua com o traço "paint".
 - Retrato funciona; em partida aparece "🔄 Gire o celular para ver o campo maior". Paisagem tem login em 2 colunas.
 
+## Minigame 2 — Karatê 🥋
+Luta 1x1 **longe da praça**: ao aceitar o desafio, os dois somem da praça e vão para o **Nilton Dojo** (tatame,
+estandarte, lanternas, gongo e um sensei velhinho que comenta a luta). **Melhor de 3 rounds**, 45 s cada, 100 de vida.
+Várias lutas podem acontecer ao mesmo tempo (cada uma no seu dojo). Quem fica na praça só vê o resultado no chat.
+
+**Como começar**: clique num player → cartão → "🥋 Desafiar: Karatê" (convite 20 s, revanche no fim igual ao Gol a Gol).
+
+**Visão 2.5D estilo beat 'em up**: anda em x e em profundidade; você **sempre encara o oponente**; um golpe só acerta
+quem está à frente, no alcance e na mesma faixa de profundidade (dá para desviar indo para cima/baixo).
+
+| Golpe | Teclas | Vantagem | Fraqueza |
+|---|---|---|---|
+| 👊 Soco fraco | J / Z | **o mais rápido** (sai em 0,07 s): interrompe golpes fortes; **encadeia combo** (no acerto pode emendar o próximo) | dano 4, alcance curto |
+| 👊 Soco forte | U / X | **quebra a defesa** (deixa tonto), avança um passo, dano 13 | lento de sair (0,24 s): toma contra-ataque do soco/chute fraco |
+| 🦶 Chute fraco | K / C | **alcance longo** e deixa o oponente **lento** ("perna bamba", 1,8 s) | recuperação longa se errar |
+| 🦶 Chute forte | I / V | **dano máximo (19), maior alcance e DERRUBA** | muito lento (0,34 s) e fácil de punir se errar ("ERROU FEIO!") |
+| 🛡️ Defesa | Shift / L (segurar) | segura tudo menos soco forte (só 15% do dano passa); anda devagar | **soco forte quebra** |
+| ✨ Defesa perfeita | levantar a defesa ≤ 0,15 s antes do golpe | ninguém se machuca e o **atacante fica tonto** 0,75 s | precisa de tempo certo; não vale spammar (0,6 s entre tentativas) |
+| 💨 Dash | Espaço | **a cada 3 s**: arranque de 135 px, **invencível** no começo (atravessa golpes e passa por trás) | recarga de 3 s |
+
+Regras que dão profundidade:
+- **CONTRA-ATAQUE** (+50%): acertar quem está preparando um golpe.
+- **INVESTIDA** (+25%): golpe começado até 0,35 s depois do dash.
+- **Combo**: acertos seguidos valem 15% menos cada; o 4º derruba ("COMBO FINAL!").
+- **PREVISÍVEL**: repetir o mesmo golpe entre os últimos 4 acertos tira 15% por repetição (mín. 50%) — variar compensa.
+- **Troca**: golpes que acertam no mesmo instante acertam os dois (sem vantagem de quem chegou primeiro no servidor).
+- Caído/levantando = invencível. Tempo esgotado: vence quem tem mais vida (desempate: mais dano causado).
+
+**Feedback**: faíscas de impacto, números de dano, "hit-stop" (congela 50–400 ms nos golpes fortes), tremida, barra de
+vida com dano "atrasado" em branco, fantasmas no dash, estrelinhas de tontura, K.O.! / TEMPO! / PERFEITO!, gongo.
+No celular: joystick + 4 botões de golpe + dash (com recarga visível) + defesa.
+
+**Equilíbrio** (`scripts/karate-balance.js 40`, IAs com 0,2 s de reação): o estilo misto vence só-soco-forte 98%,
+só-chute-forte 85%, só-defesa 100%, só-chute-fraco 95% e empata com só-soco-fraco (~50%); entre misto x misto o dano
+fica dividido entre os 4 golpes (20–32% cada).
+
 ## Futuro (ver ROADMAP)
 Minigames por área: corrida no gelo do lago, pênalti/futebol por times na área de sports, "pega-pega" na praça.

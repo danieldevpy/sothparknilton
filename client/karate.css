@@ -1,0 +1,71 @@
+/* ---------- Karatê (dojo) ----------
+   #kt-ui fica fora do #hud para ficar por cima dos controles mobile (#m-ui). */
+
+#kt-ui { position: fixed; inset: 0; z-index: 7; pointer-events: none; }
+
+/* durante a luta, some o que é da praça */
+body.kt-on #emotes, body.kt-on .help, body.kt-on #score, body.kt-on #zone-toast,
+body.kt-on #gg-bar, body.kt-on #gg-help, body.kt-on #online-list { display: none !important; }
+body.kt-on:not(.mobile) #chat-log { opacity: .85; max-height: 92px; bottom: 150px; }
+body.mobile.kt-on #m-ui > :not(.m-top):not(.m-panel) { display: none !important; }
+
+/* ajuda de golpes (desktop) */
+#kt-help {
+  position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%);
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: min(980px, calc(100vw - 24px));
+  pointer-events: none;
+}
+.kt-move {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 6px; align-items: center;
+  background: rgba(255, 253, 246, .92); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink);
+  padding: 4px 9px; min-width: 150px;
+}
+.kt-move .kt-keys { grid-row: span 2; display: flex; gap: 3px; }
+.kt-move b { font-size: 14px; line-height: 1.1; }
+.kt-move small { font-size: 11px; line-height: 1.1; color: #5a4a3a; }
+.kt-move[data-a="jab"] { background: #fff6c9; }
+.kt-move[data-a="punch"] { background: #ffd9c9; }
+.kt-move[data-a="kick"] { background: #d9f0ff; }
+.kt-move[data-a="hkick"] { background: #e4d9ff; }
+kbd {
+  font-family: var(--font); font-weight: 700; font-size: 13px; min-width: 22px; text-align: center;
+  background: #fff; border: 2px solid var(--ink); border-bottom-width: 4px; border-radius: 6px; padding: 0 5px;
+}
+.kt-tip { width: 100%; text-align: center; font-size: 12px; font-weight: 700; color: #fff; text-shadow: 1px 1px 0 var(--ink), -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink); }
+
+#kt-touch { display: none; }
+body.mobile #kt-help { display: none; }
+body.mobile #kt-touch { display: block; position: absolute; inset: 0; pointer-events: none; }
+
+.kt-stick {
+  position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: calc(24px + env(safe-area-inset-bottom));
+  width: 132px; height: 132px; border-radius: 50%; background: rgba(255, 255, 255, .25); border: 3px solid rgba(255, 255, 255, .6);
+  display: grid; place-items: center; pointer-events: auto; touch-action: none;
+}
+.kt-knob { width: 56px; height: 56px; border-radius: 50%; background: #fffdf6; border: 3px solid var(--ink); box-shadow: 0 4px 0 rgba(0,0,0,.3); pointer-events: none; }
+
+.kt-pad {
+  position: absolute; right: calc(14px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom));
+  display: grid; grid-template-columns: repeat(3, 66px); grid-template-rows: repeat(2, 66px); gap: 8px; pointer-events: none;
+}
+.kt-b {
+  position: relative; overflow: hidden; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
+  border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); font-size: 24px; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0;
+}
+.kt-b small { font-size: 11px; font-weight: 700; }
+.kt-b:active, .kt-b.on { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.kt-jab { background: #fff6c9; }
+.kt-punch { background: #ffb59a; }
+.kt-kick { background: #bfe6ff; }
+.kt-hkick { background: #cbb8ff; }
+.kt-dash { background: #9dfcb4; grid-column: 3; grid-row: 1; }
+.kt-dash i { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(20, 30, 60, .55); pointer-events: none; }
+.kt-dash.cool { filter: saturate(.4); }
+.kt-block { background: #fff; grid-column: 3; grid-row: 2; }
+.kt-punch { grid-column: 1; grid-row: 1; }
+.kt-hkick { grid-column: 2; grid-row: 1; }
+.kt-jab { grid-column: 1; grid-row: 2; }
+.kt-kick { grid-column: 2; grid-row: 2; }
+
+.pc-karate { background: #d23b2b; }

@@ -21,6 +21,9 @@ node scripts/bots.js 5   # 5 bots andando/falando para testar multiplayer
 node scripts/ggbot.js    # bot que aceita desafios de Gol a Gol (treino solo)
 node scripts/ggbot.js Bot2 SeuNick   # bot que te desafia quando você entrar
 node scripts/golagol-balance.js 250 skill   # simula % de gol (equilíbrio)
+node scripts/ktbot.js                    # bot de Karatê (aceita desafios; estilos: mixed, jabber, kicker...)
+node scripts/ktbot.js SenseiBot SeuNick  # bot que te desafia pro karatê quando você entrar
+node scripts/karate-balance.js 40        # estilos de IA lutando entre si (equilíbrio dos golpes)
 ```
 Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 
@@ -33,6 +36,10 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `server/minigames/GolAGol.js` | Partida de Gol a Gol (1x1, primeiro gol vence) — plugada no `Room` via `room.match` |
 | `shared/golagol.js` | Constantes (`GG`) e física da bola do Gol a Gol, usadas no servidor e na mira do cliente |
 | `client/js/minigames/golagol.js` | Cliente do Gol a Gol: convites, estado interpolado, predição, controles, mira, textos, revanche |
+| `server/minigames/Karate.js` | Luta de Karatê 1x1 num dojo separado (melhor de 3) — várias ao mesmo tempo via `room.fights` |
+| `shared/karate.js` | Constantes (`KT`), tabela de golpes (`MOVES`) e movimento, usados no servidor e na predição do cliente |
+| `client/js/minigames/karate.js` | Cliente do Karatê: cena do dojo, predição, controles teclado/toque, HUD de vida/dash, efeitos, sensei |
+| `client/js/render/fighter.js` / `dojo.js` | Lutador de quimono (poses dos golpes) e cenário do dojo, procedurais |
 | `client/js/main.js` | Login (nick + visual), conexão, start |
 | `client/js/game.js` | Estado do cliente, interpolação, câmera, loop de render, hit-test |
 | `client/js/render/*` | Desenho procedural: `paint.js` (helpers), `character.js`, `world.js`, `bubbles.js`, `fx.js` |
@@ -40,7 +47,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/mobile.js` | Interface mobile (estilo Roblox): detecção, joystick, botões de ação, painéis; ativa `body.mobile` |
 | `client/assets/generated/` | Assets gerados por IA (Kairogen) — ver `docs/ASSETS.md` |
 | `tests/` | Testes `node:test` |
-| `scripts/` | `bots.js` (bots da sala), `ggbot.js` (bot de Gol a Gol), `golagol-balance.js` (simulador de equilíbrio) |
+| `scripts/` | `bots.js` (bots da sala), `ggbot.js` (bot de Gol a Gol), `golagol-balance.js` (simulador de equilíbrio), `ktbot.js` + `karate-ai.js` + `karate-balance.js` (bot/IA/simulador do Karatê) |
 
 ## Documentação (manter atualizada!)
 - `docs/ARCHITECTURE.md` — como as peças conversam, ticks, interpolação
@@ -63,9 +70,14 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 9. Rodar `npm test` antes de considerar algo pronto.
 10. Mexeu em números do Gol a Gol (`GG` em `shared/golagol.js`)? Rode `scripts/golagol-balance.js` (rand e skill) e registre em DECISIONS.
 11. Novo minigame: mesma interface do `GolAGol` (`has/handle/tick/forfeit/publicInfo`), regras no servidor, física/constantes em `shared/`.
+12. Mexeu em `KT`/`MOVES` (`shared/karate.js`)? Rode `scripts/karate-balance.js` — nenhum estilo de um golpe só deve vencer o `mixed` com folga — e registre em DECISIONS.
 12. **Mobile**: toda UI nova precisa funcionar em `body.mobile` (retrato e paisagem) — teste com `?mobile=1` e viewport 375×812 / 812×375. Controles de toque novos vão em `mobile.js` (botões em `#m-actions` com `data-show`).
 
 ## Estado atual
+**Karatê (branch `feature/karate`, 2026-10-01)**: minigame **Karatê 1x1** num **dojo separado** da praça
+(clique num player → 🥋 Desafiar: Karatê). Soco fraco/forte, chute fraco/forte com vantagens próprias, defesa
+(e defesa perfeita), dash a cada 3 s, melhor de 3 rounds, várias lutas simultâneas. Ver GAME_DESIGN.
+
 **v0.3.0 (2026-10-01)**: versão **mobile web** estilo Roblox (joystick, botões grandes, painéis recolhíveis,
 Gol a Gol por toque, retrato e paisagem). Desktop inalterado.
 

@@ -21,6 +21,26 @@ Diário de desenvolvimento. Entrada nova **no topo**. Formato:
 online, menu, cartão do player, desafio, goleiro (joystick + mergulho), chutador (mirar tocando, efeito, CHUTAR),
 partida inteira até "VOCÊ PERDEU!" e revanche por toque. Desktop conferido com `?mobile=0`. 32 testes passando.
 
+## 2026-10-01 — Minigame Karatê 🥋 (branch `feature/karate`, worktree separado)
+**Feito**
+- `shared/karate.js` (KT, MOVES, movimento), `server/minigames/Karate.js` (luta autoritativa), `Room`: desafio com
+  `game`, `isBusy`, `fights`/`fightOf`, várias lutas simultâneas, lutadores congelados na praça (`pose 'dojo'`).
+- 4 golpes com vantagens próprias + defesa/defesa perfeita + dash a cada 3 s; contra-ataque, investida, combo (4º derruba),
+  previsível; troca justa de golpes simultâneos; melhor de 3; tempo; W.O.
+- Cliente: `minigames/karate.js` (cena própria, predição, HUD, efeitos, sensei, revanche), `render/fighter.js`
+  (quimono com poses), `render/dojo.js` (cenário + gongo + sensei), `karate.css`, sons sintetizados `kt_*`.
+- Cartão do player ganhou "🥋 Desafiar: Karatê"; convite com título do minigame.
+- Scripts: `ktbot.js` (bot que luta), `karate-ai.js` (IA com estilos), `karate-balance.js` (simulador). 17 testes novos (49 no total).
+
+**Equilíbrio**: ver D-016/D-017 (troca justa, nerf do chute fraco e soco fraco, regra PREVISÍVEL).
+
+**Verificado no navegador** (porta 3100, worktree): convite → dojo; andar, golpes, dash, defesa; CONTRA-ATAQUE, DERRUBOU!,
+K.O. PERFEITO, rounds, tela de derrota com revanche, volta para a praça; espectador vê os dois sumirem e não recebe estado;
+layout de celular deitado (joystick + botões); console sem erros.
+
+**Merge**: feito a partir do commit-base `d9a3a86`; conflitos esperados só em docs (DEVLOG/ROADMAP/CLAUDE.md) e nas
+linhas vizinhas de `game.js`/`input.js` se o trabalho mobile mexer nelas. Versão do `package.json` não foi alterada.
+
 ## 2026-10-01 — v0.2.0: minigame Gol a Gol
 **Feito**
 - Desafio clicando no player (cartão), convites com contagem regressiva, aceitar/recusar, status por toast.

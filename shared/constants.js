@@ -66,4 +66,16 @@ export const MSG = {
   GG_STATE: 'gg_state', // s->c estado 30x/s
   GG_EVENT: 'gg_event', // s->c {kind, ...}
   GG_END: 'gg_end', // s->c {winner, loser, reason}
+
+  // ---- minigame Karatê (luta 1x1 no dojo) ----
+  // o desafio usa CHALLENGE/CHALLENGE_REPLY/CH_STATUS com `game: 'karate'`
+  KT_INPUT: 'kt_input', // c->s {mx, my, block}
+  KT_ACT: 'kt_act', // c->s {a: jab|punch|kick|hkick|dash, dx?, dy?}
+  KT_START: 'kt_start', // s->todos {id, a:{id,nick}, b:{id,nick}}
+  KT_STATE: 'kt_state', // s->lutadores, 30x/s
+  KT_EVENT: 'kt_event', // s->lutadores {kind, ...}
+  KT_END: 'kt_end', // s->todos {winner, loser, reason, score}
 };
+
+// Minigames que podem ser escolhidos num desafio (campo `game`; ausente = golagol).
+export const GAMES = ['golagol', 'karate'];
