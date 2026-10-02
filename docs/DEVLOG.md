@@ -21,6 +21,23 @@ Diário de desenvolvimento. Entrada nova **no topo**. Formato:
 online, menu, cartão do player, desafio, goleiro (joystick + mergulho), chutador (mirar tocando, efeito, CHUTAR),
 partida inteira até "VOCÊ PERDEU!" e revanche por toque. Desktop conferido com `?mobile=0`. 32 testes passando.
 
+## 2026-10-02 — v0.4.0 em produção na VPS 🚀 (http://204.157.124.113:3000)
+**Feito**
+- Karatê mergeado no `master` (fast-forward, sem conflitos). Versão 0.4.0.
+- Produção: `Dockerfile` (node:22-alpine, usuário sem root, HEALTHCHECK), `compose.yml` (porta 3000, 256 MB, 1 CPU,
+  só-leitura, logs rotativos, `restart: unless-stopped`), `scripts/deploy.sh` (testes → tar via SSH → `compose up --build`
+  → confere `/health` pelo IP externo), `docs/DEPLOY.md`. A VPS tem outros sistemas — nada deles foi tocado.
+- Rede: atraso de interpolação adaptativo (`client/js/jitter.js`) na praça/Gol a Gol/Karatê, extrapolação curta quando o
+  buffer esvazia, ping na tela (`ping`/`pong`), predição do Karatê considerando o RTT, reconexão automática, vigia de
+  carregamento contra `ERR_NETWORK_CHANGED`, gzip + ETag/304, limite de 12 conexões/IP, heartbeat 10 s, SIGTERM gracioso.
+- `scripts/netcheck.js` (diagnóstico de rede). 50 testes.
+
+**Verificado**: deploy pelo script (container `healthy`, 18 MB RAM, 0,75% CPU, demais containers no ar); acesso pelo IP
+externo; luta de karatê em produção contra o bot (ping 74 ms); medição de dentro da VPS sem jitter; reconexão automática e
+vigia de carregamento testados no navegador.
+**Achado**: o Wi-Fi de casa (sinal 52%) tem 55% de perda até o roteador — explica as travadas/quedas daqui e o celular não
+acessar o PC pela rede local. Pelo IP da VPS no 4G isso não acontece.
+
 ## 2026-10-01 — Minigame Karatê 🥋 (branch `feature/karate`, worktree separado)
 **Feito**
 - `shared/karate.js` (KT, MOVES, movimento), `server/minigames/Karate.js` (luta autoritativa), `Room`: desafio com

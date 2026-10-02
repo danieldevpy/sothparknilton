@@ -24,6 +24,10 @@ function saveProfile(p) {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(p)); } catch { /* sem storage */ }
 }
 
+// sinal para o "vigia" do index.html: o jogo carregou
+window.__npBoot = true;
+try { sessionStorage.removeItem('np.bootTries'); } catch { /* sem storage */ }
+
 const saved = loadProfile();
 const AUTO_KEY = 'np.autologin';
 const AUTO_MAX = 8;

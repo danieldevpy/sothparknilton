@@ -340,7 +340,14 @@ export class Game {
         return { ...b, x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, moving: b.moving || a.moving };
       }
     }
-    return buf[buf.length - 1];
+    // buffer vazio (rede engasgou): quem estava andando continua por até 120 ms em vez de congelar
+    const last = buf[buf.length - 1];
+    const prev = buf[buf.length - 2];
+    if (prev && last.moving !== 0 && last.at > prev.at && at > last.at) {
+      const e = Math.min(at - last.at, 120) / (last.at - prev.at);
+      return { ...last, x: last.x + (last.x - prev.x) * e, y: last.y + (last.y - prev.y) * e };
+    }
+    return last;
   }
 
   ballPos() {

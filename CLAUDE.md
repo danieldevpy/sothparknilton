@@ -25,6 +25,7 @@ node scripts/ktbot.js                    # bot de Karatê (aceita desafios; esti
 node scripts/ktbot.js SenseiBot SeuNick  # bot que te desafia pro karatê quando você entrar
 node scripts/karate-balance.js 40        # estilos de IA lutando entre si (equilíbrio dos golpes)
 ./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
+node scripts/netcheck.js ws://204.157.124.113:3000/ws   # mede ping/jitter/travadas contra um servidor
 ```
 Produção: **http://204.157.124.113:3000** (VPS, Docker, só IP externo) — operação em `docs/DEPLOY.md`.
 Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.

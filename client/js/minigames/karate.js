@@ -575,6 +575,14 @@ export class KarateClient {
     const oa = a.by[oppId];
     const ob = b.by[oppId];
     const opp = { ...ob, x: oa.x + (ob.x - oa.x) * k, y: oa.y + (ob.y - oa.y) * k, t: ob.t + Math.max(0, at - b.at) / 1000 };
+    // buffer vazio (rede engasgou): continua o movimento por até 100 ms em vez de congelar
+    const prevS = this.buf[this.buf.length - 2];
+    if (a === b && at > b.at && prevS?.by[oppId] && b.at > prevS.at) {
+      const e = Math.min(at - b.at, 100) / (b.at - prevS.at);
+      opp.x += (ob.x - prevS.by[oppId].x) * e;
+      opp.y += (ob.y - prevS.by[oppId].y) * e;
+      clampArena(opp);
+    }
 
     // eu: previsão local
     const age = (now - s.at) / 1000;

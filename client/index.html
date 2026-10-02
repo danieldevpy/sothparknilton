@@ -84,6 +84,29 @@
     </div>
   </div>
 
+  <script>
+    // Rede instável (troca Wi-Fi/4G = ERR_NETWORK_CHANGED): se um script do jogo falhar ao
+    // carregar, ou o jogo não iniciar em 25 s, recarrega sozinho (no máximo 6 vezes seguidas).
+    (function () {
+      var KEY = 'np.bootTries';
+      var tries = 0;
+      try { tries = Number(sessionStorage.getItem(KEY)) || 0; } catch (e) { /* sem storage */ }
+      var done = false;
+      function retry() {
+        if (done || window.__npBoot || tries >= 6) return;
+        done = true;
+        try { sessionStorage.setItem(KEY, String(tries + 1)); } catch (e) { /* sem storage */ }
+        setTimeout(function () { location.reload(); }, 1500);
+      }
+      window.addEventListener('error', function (ev) {
+        var t = ev.target;
+        var url = t && (t.src || t.href);
+        // só arquivos do próprio jogo (fonte do Google fora do ar não conta)
+        if (url && url.indexOf(location.origin) === 0 && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) retry();
+      }, true);
+      setTimeout(function () { if (!window.__npBoot) retry(); }, 25000);
+    })();
+  </script>
   <script type="module" src="/js/main.js"></script>
 </body>
 </html>
