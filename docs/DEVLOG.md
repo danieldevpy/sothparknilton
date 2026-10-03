@@ -57,6 +57,11 @@ qualidade/eco sem cair → reinício de ICE e recriação (~2 s) → voz durante
 → celular retrato/paisagem → fechar a aba tira do grupo. A suíte inteira também passou **forçando só relay** pelo
 coturn local (UDP e TCP) com as credenciais temporárias.
 
+**Em produção (2026-10-03)**: deploy v0.5.0 (jogo 19 MB + `niltonpark-turn` 7 MB de RAM; demais containers da VPS
+intocados). Do PC, contra `http://204.157.124.113:3000?debug=1` (Chrome tratando o IP como seguro só no teste):
+suíte E2E inteira ✔ e **só-relay pelo TURN da VPS** ✔ (RTT 57 ms). Falta só o HTTPS do domínio (sudo do usuário:
+`scripts/setup-domain.sh`).
+
 ## 2026-10-02 — v0.4.0 em produção na VPS 🚀 (http://204.157.124.113:3000)
 **Feito**
 - Karatê mergeado no `master` (fast-forward, sem conflitos). Versão 0.4.0.
