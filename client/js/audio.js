@@ -72,6 +72,11 @@ const SOUNDS = {
   win: () => [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tone({ type: 'square', from: f, dur: 0.16, vol: 0.06, delay: i * 0.11 })),
   lose: () => [392, 370, 349, 262].forEach((f, i) => tone({ type: 'triangle', from: f, to: f * 0.97, dur: 0.35, vol: 0.07, delay: i * 0.3 })),
   invite: () => { tone({ type: 'square', from: 700, dur: 0.08, vol: 0.05 }); tone({ type: 'square', from: 1050, dur: 0.12, vol: 0.05, delay: 0.1 }); },
+  // chat de voz
+  vc_on: () => { tone({ type: 'sine', from: 660, dur: 0.09, vol: 0.06 }); tone({ type: 'sine', from: 990, dur: 0.14, vol: 0.06, delay: 0.09 }); },
+  vc_off: () => { tone({ type: 'sine', from: 880, dur: 0.09, vol: 0.06 }); tone({ type: 'sine', from: 520, dur: 0.16, vol: 0.06, delay: 0.09 }); },
+  vc_mute: () => tone({ type: 'triangle', from: 520, to: 300, dur: 0.1, vol: 0.06 }),
+  vc_unmute: () => tone({ type: 'triangle', from: 300, to: 620, dur: 0.1, vol: 0.06 }),
   // Karatê
   kt_swing: () => noise({ dur: 0.1, vol: 0.06, freq: 3500 }),
   kt_hit: () => { tone({ type: 'square', from: 240, to: 90, dur: 0.07, vol: 0.1 }); noise({ dur: 0.07, vol: 0.18, freq: 1800 }); },

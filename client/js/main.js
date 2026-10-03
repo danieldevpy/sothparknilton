@@ -157,6 +157,8 @@ function start() {
   ping();
   setInterval(ping, 2000);
   const mobileUi = IS_MOBILE ? setupMobile(game, hud) : null;
+  game.voice.ui.mount(); // depois do HUD mobile (o ícone 🎙️ vai na barra do topo)
+  if (location.hostname === 'localhost') window.__voice = game.voice; // debug
   if (location.hostname === 'localhost') window.__mobile = mobileUi; // debug
   const loop = () => {
     game.frame();

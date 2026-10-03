@@ -116,3 +116,46 @@ test('produção: gzip, ETag/304, /health com versão e ping/pong', async () => 
     await game.close();
   }
 });
+
+test('voz pela rede: convite, grupo e SDP grande (> 4 KB) repassado só ao membro', async () => {
+  const game = createGameServer({ port: 0, host: '127.0.0.1', log: () => {}, voice: { stun: ['stun:x:3478'], turn: [], turnSecret: '' } });
+  const port = await game.ready;
+  try {
+    const join = async (nick) => {
+      const c = client(port);
+      await c.open;
+      c.send({ t: MSG.HELLO, nick });
+      c.id = (await c.waitFor((m) => m.t === MSG.WELCOME)).you;
+      return c;
+    };
+    const a = await join('Ana');
+    const b = await join('Bia');
+    const c = await join('Cris');
+    a.send({ t: MSG.VC_INVITE, to: b.id });
+    const ask = await b.waitFor((m) => m.t === MSG.VC_ASK);
+    assert.equal(ask.from, a.id);
+    b.send({ t: MSG.VC_REPLY, from: a.id, accept: true });
+    const ga = await a.waitFor((m) => m.t === MSG.VC_GROUP && m.g);
+    assert.deepEqual(ga.ice, [{ urls: ['stun:x:3478'] }]);
+    await c.waitFor((m) => m.t === MSG.VC_TAG && m.id === b.id && m.g === ga.g.id);
+
+    const sdp = `v=0\r\n${'a=x-padding:0123456789abcdef\r\n'.repeat(250)}`; // ~7,5 KB
+    a.send({ t: MSG.VC_SIGNAL, to: b.id, d: { sdp: { type: 'offer', sdp } } });
+    a.send({ t: MSG.VC_SIGNAL, to: c.id, d: { sdp: { type: 'offer', sdp } } });
+    const sig = await b.waitFor((m) => m.t === MSG.VC_SIGNAL);
+    assert.equal(sig.from, a.id);
+    assert.equal(sig.d.sdp.sdp, sdp);
+    assert.equal((await fetch(`http://127.0.0.1:${port}/health`).then((r) => r.json())).voice.inVoice, 2);
+
+    b.ws.close();
+    const end = await a.waitFor((m) => m.t === MSG.VC_GROUP && m.g === null);
+    assert.equal(end.reason, 'dissolved');
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(c.ws.readyState, c.ws.OPEN);
+    assert.ok(!(await Promise.race([c.waitFor((m) => m.t === MSG.VC_SIGNAL, 100).catch(() => false)])));
+    a.ws.close();
+    c.ws.close();
+  } finally {
+    await game.close();
+  }
+});

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { WebSocketServer } from 'ws';
 import { Room } from './Room.js';
+import { voiceConfigFromEnv } from './VoiceHub.js';
 import { MSG, TICK_HZ, SNAPSHOT_HZ } from '../shared/constants.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -91,8 +92,8 @@ async function serveStatic(req, res) {
   }
 }
 
-export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.log } = {}) {
-  const room = new Room();
+export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.log, voice = voiceConfigFromEnv() } = {}) {
+  const room = new Room({ voice });
 
   const server = http.createServer((req, res) => {
     if (req.url === '/health') {
@@ -103,6 +104,7 @@ export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.
         players: room.players.size,
         fights: room.fights.size,
         match: !!room.match,
+        voice: room.voice.stats(),
         uptime: Math.round((Date.now() - STARTED_AT) / 1000),
       }));
       return;
@@ -110,7 +112,8 @@ export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.
     serveStatic(req, res);
   });
 
-  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 4096, perMessageDeflate: false });
+  // 16 KB: a sinalização da voz (SDP) passa de 4 KB; o resto continua pequeno e com limite de msgs/s
+  const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 16_384, perMessageDeflate: false });
   const perIp = new Map();
 
   wss.on('connection', (ws, req) => {
