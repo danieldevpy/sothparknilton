@@ -92,6 +92,18 @@ async function serveStatic(req, res) {
   }
 }
 
+// IP real do jogador. Atrás do nginx (domínio com HTTPS) a conexão chega do proxy local (127.0.0.1 ou o
+// gateway do Docker, 172.x) e o IP de verdade vem no cabeçalho. Só confiamos no cabeçalho quando quem conectou
+// é um endereço privado — de fora da VPS ninguém consegue se passar por outro IP.
+const PRIVATE_IP = /^(::1$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|fc|fd)/i;
+export function clientIp(req) {
+  const direct = String(req.socket.remoteAddress || '?').replace(/^::ffff:/, '');
+  if (!PRIVATE_IP.test(direct)) return direct;
+  const fwd = req.headers['x-real-ip'] || String(req.headers['x-forwarded-for'] || '').split(',')[0];
+  const ip = String(fwd || '').trim().replace(/^::ffff:/, '');
+  return /^[0-9a-f.:]{3,45}$/i.test(ip) ? ip : direct;
+}
+
 export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.log, voice = voiceConfigFromEnv() } = {}) {
   const room = new Room({ voice });
 
@@ -117,7 +129,7 @@ export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.
   const perIp = new Map();
 
   wss.on('connection', (ws, req) => {
-    const ip = req.socket.remoteAddress || '?';
+    const ip = clientIp(req);
     const n = (perIp.get(ip) || 0) + 1;
     perIp.set(ip, n);
     ws.once('close', () => {

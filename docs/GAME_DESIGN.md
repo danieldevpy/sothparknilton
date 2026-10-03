@@ -116,5 +116,26 @@ No celular: joystick + 4 botões de golpe + dash (com recarga visível) + defesa
 só-chute-forte 85%, só-defesa 100%, só-chute-fraco 95% e empata com só-soco-fraco (~50%); entre misto x misto o dano
 fica dividido entre os 4 golpes (20–32% cada).
 
+## Chat de voz por grupos 🎙️ (v0.5.0)
+A voz é **só em grupo** — ninguém fala "para a praça inteira". Assim dá para conversar com os amigos sem virar bagunça.
+- **Clicar num player** (cartão) mostra um botão roxo conforme a situação:
+  - ninguém em grupo → **🎙️ Chamar para conversar por voz** (cria um grupo com vocês dois);
+  - eu em grupo, ele não → **🎙️ Convidar para o seu grupo de voz**;
+  - ele já em grupo → **🎧 Pedir para entrar no grupo de voz** (ele aprova; se eu estava em outro grupo, troco);
+  - mesmo grupo → "Está no seu grupo de voz" (desabilitado); grupo cheio (8) → desabilitado.
+- Convites/pedidos chegam como cartões roxos com Aceitar/Recusar e barrinha de 30 s (iguais aos desafios).
+- Quem está num grupo tem **🎧 antes do nome** (todo mundo vê → sabe que dá para pedir para entrar).
+- Para quem está no MEU grupo: nome fica **verde com ondinhas de som** quando a pessoa fala; **🔇** quando está muda.
+- **Painel 🎙️** (pílula no topo / ícone no celular): membros com indicador de fala, 👑 dono, volume de cada pessoa
+  (só para mim), silenciar alguém só para mim, ✖ remover (dono), estado da conexão (⏳ conectando, 🔄 reconectando,
+  🛰️ via servidor TURN, ping no tooltip), botões **🎤 Mic**, **🎧 Som** (desliga o som de todos e o mic), ⚙️ Ajustes, 📞 Sair.
+- Pílula **🎤** ao lado (ou botão redondo roxo no celular, acima do PULAR): mudo rápido. Tecla **M** = mudo.
+- **⚙️ Configurações de áudio**: microfone (dispositivo, volume 0–200%, medidor de nível, "ouvir meu microfone");
+  quando transmitir (**ativação por voz** com sensibilidade e linha no medidor · **voz aberta** · **apertar para falar**
+  com tecla configurável, padrão B — no celular segura o botão 🎤); saída (dispositivo quando o navegador deixa,
+  volume das vozes); limpeza (cancelamento de eco, supressão de ruído, ganho automático); qualidade (16/32/64 kbps).
+  Tudo salvo no navegador; o volume de cada pessoa fica salvo pelo nick.
+- Sons curtinhos: entrar/sair do grupo, mudo/desmudo. A voz continua no Gol a Gol e no dojo (dá para provocar 😄).
+
 ## Futuro (ver ROADMAP)
 Minigames por área: corrida no gelo do lago, pênalti/futebol por times na área de sports, "pega-pega" na praça.

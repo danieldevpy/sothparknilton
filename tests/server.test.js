@@ -159,3 +159,14 @@ test('voz pela rede: convite, grupo e SDP grande (> 4 KB) repassado só ao membr
     await game.close();
   }
 });
+
+test('IP real: cabeçalho do proxy só vale quando a conexão vem de endereço privado', async () => {
+  const { clientIp } = await import('../server/index.js');
+  const req = (remoteAddress, headers = {}) => ({ socket: { remoteAddress }, headers });
+  assert.equal(clientIp(req('203.0.113.9')), '203.0.113.9');
+  assert.equal(clientIp(req('203.0.113.9', { 'x-real-ip': '1.2.3.4' })), '203.0.113.9', 'de fora não dá para falsificar');
+  assert.equal(clientIp(req('127.0.0.1', { 'x-real-ip': '198.51.100.7' })), '198.51.100.7');
+  assert.equal(clientIp(req('::ffff:172.18.0.1', { 'x-forwarded-for': '198.51.100.8, 10.0.0.1' })), '198.51.100.8');
+  assert.equal(clientIp(req('172.18.0.1')), '172.18.0.1');
+  assert.equal(clientIp(req('127.0.0.1', { 'x-real-ip': 'lixo<script>' })), '127.0.0.1');
+});

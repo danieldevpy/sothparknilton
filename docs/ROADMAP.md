@@ -55,6 +55,19 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - 🔜 T-328 Escolher o dojo/cenário e um "ring-out" na beira do tatame
 - 🔜 T-329 Treino solo contra o SenseiBot embutido no servidor (sem rodar script)
 
+## Fase V — Chat de voz por grupos ✅ (v0.5.0, 2026-10-03)
+- ✅ T-601 Grupos no servidor (`VoiceHub`): convidar, **pedir para entrar** em grupo de outro, aceitar/recusar, trocar de grupo, dono remove, limite 8, convites com TTL/anti-spam
+- ✅ T-602 WebRTC em malha: só o menor id oferece, ICE agrupado, reinício de ICE → recriação → vigia; Opus com DTX/FEC
+- ✅ T-603 Microfone: volume de entrada, ativação por voz (sensibilidade + medidor), voz aberta, apertar para falar (tecla configurável / botão no celular), eco/ruído/ganho, troca de dispositivo sem renegociar
+- ✅ T-604 Saída: `<audio>` por pessoa (cancelamento de eco), volume geral e por pessoa (salvo por nick), silenciar alguém só para mim, saída por `setSinkId`, aviso de autoplay
+- ✅ T-605 UI: botão no cartão do player (chamar / convidar / pedir para entrar), 🎧 no nome de quem está em grupo, fala no mapa (nome verde com ondas, 🔇), painel 🎙️, pílula 🎤 / botão redondo no celular, janela ⚙️ Configurações de áudio, sons
+- ✅ T-606 TURN (coturn) com credenciais temporárias; IP real atrás do proxy; `scripts/voice-e2e.mjs` (Chrome headless com microfone falso, inclusive só-relay)
+- 🟡 T-607 Domínio `park.magmacursosltda.com.br` com HTTPS (microfone) — DNS ok, falta rodar `scripts/setup-domain.sh` com sudo
+- 💡 T-608 Voz por proximidade na praça (volume cai com a distância) como modo opcional do grupo
+- 💡 T-609 Manter o grupo de voz numa reconexão rápida (hoje recarregar = sair do grupo)
+- 💡 T-610 TURN com `network_mode: host` + faixa maior (precisa liberar no ufw com root)
+- 💡 T-611 Moderação de voz: denunciar/bloquear alguém (não receber convites dele)
+
 ## Fase 1 — Polimento da sala 🔜
 - 🟡 T-101 Reconexão automática ✅ (recarrega e entra sozinho, v0.4.0) · falta manter a sessão/partida por alguns segundos
 - 🔜 T-102 Cartão do player: já tem desafiar/acenar (v0.2.0); falta seguir, perfil e sussurrar
@@ -79,6 +92,6 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 ## Fase 4 — Escala 💡
 - 💡 T-401 Múltiplas salas/mapas (um `Room` por sala, portas entre mapas)
 - 💡 T-402 Snapshots delta + área de interesse
-- ✅ T-403 Deploy Docker na VPS pelo IP externo (`scripts/deploy.sh`, v0.4.0) · 💡 falta domínio + HTTPS/WSS e métricas
+- ✅ T-403 Deploy Docker na VPS pelo IP externo (`scripts/deploy.sh`, v0.4.0) · 🟡 domínio + HTTPS/WSS preparado (T-607) · 💡 métricas
 - ✅ T-405 Jogabilidade pela internet: atraso adaptativo ao jitter, ping na tela, gzip/ETag, limite por IP (v0.4.0)
 - 💡 T-404 Moderação: kick/mute por admin, rate limit por IP

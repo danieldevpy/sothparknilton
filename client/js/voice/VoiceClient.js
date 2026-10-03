@@ -44,6 +44,8 @@ export class VoiceClient {
     document.body.appendChild(this.box);
     this.ui = new VoiceUi(this, hud);
     this.levelTimer = null;
+    this.asking = new Set(); // ids com convite/pedido meu (ou aceite) esperando: segura o microfone aberto
+    this.unlockedAt = 0;
     this.setupKeys();
     // qualquer toque destrava o áudio (autoplay / AudioContext suspenso)
     window.addEventListener('pointerdown', () => this.unlock(), true);
@@ -110,6 +112,27 @@ export class VoiceClient {
     const nick = msg.nick || (msg.with ? this.nick(msg.with) : '');
     if (msg.status === 'expired' || msg.status === 'gone') this.ui.removeAsk(msg.with);
     if (text) this.hud.toast(text(nick));
+    // convite/pedido não deu em nada: não deixa o microfone aberto à toa
+    if (msg.status !== 'sent' && msg.status !== 'asked') {
+      this.asking.delete(msg.with);
+      this.releaseMicIfIdle();
+    }
+  }
+
+  // microfone aberto só enquanto serve: no grupo, testando nas configurações ou com convite esperando
+  releaseMicIfIdle() {
+    if (this.group || this.testing || this.asking.size) return;
+    this.stopMic();
+    this.ui.render();
+  }
+
+  // abriu o microfone para convidar/pedir: segura enquanto a resposta pode chegar
+  holdMicForAsk(id) {
+    this.asking.add(id);
+    setTimeout(() => {
+      this.asking.delete(id); // por garantia, caso a resposta se perca
+      this.releaseMicIfIdle();
+    }, VOICE.ASK_TTL_MS + 1500);
   }
 
   onGroup(msg) {
@@ -130,6 +153,7 @@ export class VoiceClient {
     }
     const before = new Set(was?.members.map((m) => m.id) || []);
     this.group = msg.g;
+    this.asking.clear();
     if (!was || was.id !== msg.g.id) {
       play('vc_on');
       this.hud.toast(msg.g.members.length > 2 ? `Você entrou no grupo de voz (${msg.g.members.length} pessoas) 🎙️` : 'Grupo de voz ligado! 🎙️');
@@ -219,6 +243,7 @@ export class VoiceClient {
   }
 
   unlock() {
+    this.unlockedAt = performance.now();
     this.mic?.resume();
     if (!this.needsGesture) return;
     this.needsGesture = false;
@@ -300,17 +325,22 @@ export class VoiceClient {
   // ---------- ações do jogador ----------
 
   async invite(id) {
+    this.holdMicForAsk(id);
     await this.ensureMic(); // pede o microfone já no clique (gesto do usuário)
     this.game.send({ t: MSG.VC_INVITE, to: id });
   }
 
   async request(id) {
+    this.holdMicForAsk(id);
     await this.ensureMic();
     this.game.send({ t: MSG.VC_REQUEST, to: id });
   }
 
   async reply(from, accept) {
-    if (accept) await this.ensureMic();
+    if (accept) {
+      this.holdMicForAsk(from); // até o vc_group chegar (ou o convite ter expirado)
+      await this.ensureMic();
+    }
     this.game.send({ t: MSG.VC_REPLY, from, accept });
   }
 
@@ -412,7 +442,7 @@ export class VoiceClient {
   stopTest() {
     this.testing = false;
     this.mic?.setMonitor(false);
-    if (!this.group) this.stopMic();
+    this.releaseMicIfIdle();
   }
 
   // ---------- teclado: M = mudo, apertar-para-falar ----------
@@ -455,7 +485,7 @@ export class VoiceClient {
   pollLevels() {
     const now = performance.now();
     // AudioContext do microfone suspenso (iOS/autoplay): sem um toque os outros só ouvem silêncio
-    if (this.mic?.ctx && this.mic.ctx.state !== 'running' && !this.needsGesture) this.askGesture();
+    if (this.mic?.ctx && this.mic.ctx.state !== 'running' && !this.needsGesture && now - this.unlockedAt > 1500) this.askGesture();
     if (this.mic?.speaking) this.speakAt.set(this.me, now);
     for (const [id, peer] of this.peers) {
       if (!this.deaf && !this.localMute.has(id) && peer.audioLevel() > SPEAK_LEVEL) this.speakAt.set(id, now);
