@@ -38,7 +38,7 @@ async function player(nick, query = '?mobile=0', vp = { width: 1280, height: 800
   await page.setViewport(vp);
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${nick}] ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(`[${nick}] PAGEERROR ${e.message}`));
-  await page.goto(url + query);
+  await page.goto(url + query + (query ? '&' : '?') + 'debug=1');
   await page.type('#nick', nick);
   await page.click('#login-btn');
   await page.waitForFunction(() => window.__voice && window.__game.me, { timeout: 8000 });
