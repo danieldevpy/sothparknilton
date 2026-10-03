@@ -122,3 +122,26 @@ para quem quer assistir, o espectador vira parte da cena (sentado na plateia, vi
 natural — comandos de luta são aceitos só de `fightOf`. Torcida limitada (1 a cada 0,7 s, 24 lugares) e desenhada fora
 do tatame para não atrapalhar. Entrar só pelo prédio do Dojo (ou pela notificação) e só com luta rolando; o espectador
 "está" na porta do Dojo (sai por lá). Sem mudar `KT`/`MOVES` (mecânica intacta).
+
+**D-027 — Queimada: fila compartilhada + cemitério + pontuação Híbrida, numa quadra separada.** (2026-10-03)
+Da proposta: entrada "Opção A" (fila; quem chega entra no lugar de quem é queimado) e modo Híbrido. Fila infinita não
+termina rodada → quem é queimado só volta na rodada seguinte (a fila da rodada se esgota) e a partida acaba por **meta de
+pontos (50)**, não por rodadas. Melhoria: **cemitério** da queimada brasileira (o queimado continua jogando de trás do
+adversário e volta se acertar alguém) — ninguém fica parado com 1v1/2v2. Instância separada como o Dojo (várias quadras,
+banda só para quem está lá, sem colidir com a praça); o "ginásio" é o prédio de entrada (lista + criar), e o convite pelo
+cartão reaproveita `challenge` com `game:'queimada'` (de dentro da quadra pode chamar várias pessoas). Uma partida cai
+para o treino (pontos zerados) quando sobra 1 pessoa.
+
+**D-028 — Lag na Queimada: hit-stop de 0,14 s + bolas extrapoladas no cliente.** (2026-10-03)
+Pegar/esquivar exige reagir a uma bola de até 860 px/s; com 100 ms de ping a decisão chegaria tarde. Em vez de rebobinar
+o servidor: o acerto **congela a bola** 0,14 s (vira "juice" visual) e `grab`/`dodge` nesse intervalo salvam; e o cliente
+desenha as bolas **adiantadas** (`vx,vy,vz` no estado, extrapola até agora + rtt, parando no primeiro adversário). O próprio
+boneco é previsto como no Karatê; a bola que eu arremesso sai da mão localmente e passa a seguir o servidor em seguida.
+
+**D-029 — Números da Queimada medidos com `scripts/queimada-balance.js`.** (2026-10-03)
+Primeira versão: 7% de acerto no 1v1 e 41% das rodadas por tempo (boneco rápido demais e área de acerto menor que o
+desenho — o cabeção não contava). Ajustes: `HIT_R` 32 (conta a cabeça), `SPEED` 185, `MAX_THROW` 860, esquiva 88 px com
+recarga 1,5 s (1,9 difícil), bola parada fora do alcance volta ("juiz") — havia bola presa em cemitério vazio. Bug achado
+pelo simulador: `speedOf` tratava `hold = -1` como "segurando". Resultado: 1v1 13–21% de acerto e rodadas de 14–19 s;
+2v2 27–47%, 9–14 s; ~10% de pegadas; ≤ 4% por tempo; habilidade decide sem ser absoluta no 2v2. Meta subiu 40 → 50 (as
+partidas davam ~1 min). Mexeu em `QM`/`LEVELS`? Rode o simulador (1v1 e 2v2, fácil e difícil) e registre aqui.

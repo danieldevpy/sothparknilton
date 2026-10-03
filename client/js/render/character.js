@@ -60,6 +60,18 @@ export function drawCharacter(ctx, who, st) {
   } else if (lying) {
     tilt = flip * 1.45 * dir;
   }
+  // ---- poses da Queimada ----
+  if (pose === 'qthrow') {
+    tilt = 0.26 * dir; // corpo vai junto com o braço
+  } else if (pose === 'qdodge') {
+    tilt = -0.42 * dir;
+    squash = 0.86;
+    hop = 10;
+  } else if (pose === 'qstun') {
+    tilt = Math.sin(t * 12) * 0.16;
+  } else if (pose === 'qcatch') {
+    squash = 0.94;
+  }
 
   const baseY = sitting ? (st.pose === 'bench' ? -14 : 6) : 0;
 
@@ -147,6 +159,18 @@ export function drawCharacter(ctx, who, st) {
     lx = -11; rx = 11; ly = ry = -64; // braços esticados para a bola
   } else if (pose === 'kick') {
     lx = -24; ly = -36; rx = 23; ry = -14;
+  } else if (pose === 'qhold') {
+    // bola erguida do lado da frente (desenhada por fora, na mão)
+    if (dir > 0) { rx = 26; ry = -38; } else { lx = -26; ly = -38; }
+  } else if (pose === 'qthrow') {
+    // braço da frente esticado (soltou a bola), o de trás para trás
+    if (dir > 0) { rx = 32; ry = -30; lx = -20; ly = -16; } else { lx = -32; ly = -30; rx = 20; ry = -16; }
+  } else if (pose === 'qcatch') {
+    // os dois braços para a frente, prontos para agarrar
+    lx = dir * 18 - 7; rx = dir * 18 + 7; ly = -36; ry = -28;
+  } else if (pose === 'qdodge' || pose === 'qstun') {
+    const w = Math.sin(t * 16) * 6;
+    lx = -24; rx = 24; ly = -46 + w; ry = -46 - w;
   }
   for (const [ax, ay, s] of [[lx, ly, 5], [rx, ry, 6]]) {
     blob(ctx, ax, ay, 6, 6, seed + s, 0.08, frame, 10);
@@ -173,7 +197,7 @@ export function drawCharacter(ctx, who, st) {
   // ---- olhos ----
   const look_x = dir * 2.5;
   const blinking = hash(seed, Math.floor(t * 0.7)) < 0.18 && (t * 0.7) % 1 < 0.12;
-  const shocked = (e === 'fart' && et < 1) || diving;
+  const shocked = (e === 'fart' && et < 1) || diving || pose === 'qcatch' || pose === 'qdodge' || pose === 'qstun';
   for (const ex of [-7.5, 7.5]) {
     if (blinking) {
       ctx.strokeStyle = INK;

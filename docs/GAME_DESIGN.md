@@ -145,6 +145,66 @@ tudo da torcida é desenhado **fora do tatame** (atrás e na borda de baixo); ch
 cima do lugar dela; o coro fica baixo, longe das barras de vida. Quem está na plateia não pode ser desafiado (está
 "ocupado") e não anda na praça. Lotação: 24 por luta.
 
+## Minigame 3 — Queimada 🔴🔵 (v0.7.0)
+A queimada de escola, num **Ginásio** na praça (o prédio de tijolo com telhado em arco, à esquerda, em cima do lago).
+Proposta original (outro modelo) + melhorias decididas aqui — ver D-027..D-029.
+
+**Entrar**: clicar no Ginásio → painel com as quadras (`Quadra 1 · Fácil · Daniel + Maria × Nilton + João · rodada 2 ·
+⏳ 1 na fila · 🏆 Nilton 25 pts` + **▶ Entrar**) e **➕ Nova partida** (🟢 Fácil / 🔴 Difícil). Também: cartão do player →
+**🔴🔵 Chamar p/ Queimada** (da praça cria uma quadra para os dois; de dentro da quadra, **➕ Convidar** lista quem está
+livre e quem aceitar entra na SUA quadra). Notificação pequena quando alguém abre uma quadra. O prédio acende (janelas
+com bolas voando, porta aberta, onomatopeias PÁ! QUEIMOU!) quando tem partida.
+
+**Fila (Opção A da proposta)**: até 10 por quadra. 1 pessoa = **treino livre** (joga a bola nas paredes). 2–3 = 1v1;
+4+ = **2v2** (duas bolas). Quem chega espera sentado no **banco da FILA** (encostado na parede) e **entra no lugar de quem
+for queimado** (mesmo time, invencível 1 s, "ENTRA FULANO!"). Na rodada seguinte: quem esperou entra primeiro, depois quem
+sobreviveu ("quem ganha fica"), depois os queimados. Cada um tenta continuar no mesmo time (Daniel+Maria × Nilton+João).
+
+**Cemitério (melhoria — regra da queimada brasileira)**: queimado não fica parado: vai para o **cemitério atrás do time
+adversário** (fantasminha 💀) e continua jogando de lá — se pegar uma bola e **queimar alguém pelas costas, VOLTA** para a
+quadra (se o time tiver lugar). A rodada acaba quando um time fica sem ninguém na quadra.
+
+**Arremesso**: com a bola, **segura o clique** (ou o dedo) → aparece a **trajetória** (arco pontilhado, sombra no chão,
+onde quica, ✦ nas tabelas e barra de força) → **solta** = arremessa no ponto. **Força = distância do clique** (perto =
+lob fraquinho, longe = pedrada de 860 px/s). A bola tem momento: se não acertar ninguém, quica e rola. Quica nas
+**paredes** e nos **dois pneus** do meio (caos!). Segurar mais de 5 s (4 no difícil) → "🐢 demorou!" e a bola cai.
+
+**Pegar**: bola **no chão** → clicar nela / `E` / 🧤: pega se estiver no alcance (48 px fácil, 34 px difícil) e devagar
+(rápida rolando: "escapou!"). Fácil: clicou longe → o boneco **corre até ela** e passar por cima de bola lenta pega
+sozinho. Difícil: "longe demais!". Várias pessoas na mesma bola: **quem clicar primeiro pega** (largada da rodada = bolas
+na linha do meio, corrida!). Bola **vindo no ar** → postura de **pegada** (0,45 s): pegou dentro da janela =
+**⚡ PEGOU!** (+3, fica com a bola); tarde demais na postura = **deixou escapar** (a bola pula, você fica tonto, mas
+não é queimado). **A janela encolhe com a velocidade da bola** (0,42 s lenta → 0,22 s pedrada; difícil 0,30 → 0,13).
+
+**Esquivar**: clicar **fora** da bola / `Espaço` / botão direito / 💨 → pulinho de 88 px para aquele lado, invencível
+0,26 s, recarga 1,5 s (1,9 no difícil). Bola passando raspando (≤ 55 px) até 0,3 s depois = **WHOOSH!** (+1); até
+0,15 s = "no último segundo".
+
+**Hit-stop**: quando a bola acerta, ela **congela 0,14 s** no alvo (fica gostoso de ver) — e quem pegar/esquivar nesse
+instante se salva (compensa o lag da internet). Depois: **QUEIMADO!**, tremida, o boneco cai e vai para o cemitério.
+
+**Pontuação (modo Híbrido — o melhor da proposta)**: acerto **5** (+2 **TABELA!** se quicou na parede antes) · pegada **3**
+· esquiva no último segundo **1** · último(s) de pé quando a rodada acaba **10**. Tempo de rodada 75 s (acabou: vence o
+time com mais gente na quadra). **Primeiro a 50 pontos** vence → pódio (🥇🥈🥉 com 🔥 acertos ⚡ pegadas 💨 esquivas),
+"CAMPEÃO DA QUADRA" no chat da praça, e a quadra **recomeça zerada** em 8 s (quem quiser sai). Se sobrar uma pessoa,
+volta ao treino e os pontos zeram.
+
+**Por que não os outros modos da proposta**: *Accuracy* (sem eliminação) e *Survival Time* (pontos por segundo vivo)
+ficam embutidos no Híbrido (acerto vale ponto; sobreviver vale bônus); *Last One Standing* puro com fila contínua não
+termina — o Híbrido com rodadas + meta de pontos dá partidas de 1–2 min e todo mundo pontua. Opção B (squad sem
+eliminação) perderia a tensão de "entrar quando alguém cair".
+
+**Feedback**: bola vermelha de borracha com anel da cor do time quando está viva + rastro, sombra que encolhe no ar,
+"💥 FORTE!", TUM!/BOING! nas tabelas, QUEIMADO!, ⚡ PEGOU!, WHOOSH!, "VOLTOU DO CEMITÉRIO! 👻", "+5" subindo, placar na
+parede (vivos por time, relógio, rodada), barra 🐢 do tempo segurando, anel do time no chão, nomes coloridos por time.
+
+**Celular**: joystick + **🧤 PEGAR**, **💨 ESQUIVA** (com recarga visível) e **🎯 JOGAR** (arremessa no adversário mais perto;
+mirar arrastando o dedo na quadra também funciona). Em pé: câmera segue o seu boneco com zoom maior e o placar vira
+uma faixa de fichinhas; deitado: a quadra inteira.
+
+**Equilíbrio** (`scripts/queimada-balance.js`, IAs de habilidade 0,5–0,9): 1v1 ~13–21% dos arremessos acertam, rodadas
+de 14–19 s; 2v2 ~27–47%, rodadas de 9–14 s; ~10% de pegadas; quase nenhuma rodada acaba por tempo.
+
 ## Chat de voz por grupos 🎙️ (v0.5.0)
 A voz é **só em grupo** — ninguém fala "para a praça inteira". Assim dá para conversar com os amigos sem virar bagunça.
 - **Clicar num player** (cartão) mostra um botão roxo conforme a situação:

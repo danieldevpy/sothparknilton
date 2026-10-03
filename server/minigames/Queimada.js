@@ -93,8 +93,11 @@ export class QueimadaMatch {
       return;
     }
     this.event('leave', { id, nick: m.nick });
-    if (this.members.size < 2 && this.phase !== 'lobby') this.toLobby();
-    else if (this.phase === 'play') this.checkRoundEnd();
+    if (this.members.size < 2 && this.phase !== 'lobby') {
+      // sobrou um: a partida recomeça do zero quando chegar outro adversário
+      this.resetScores();
+      this.toLobby();
+    } else if (this.phase === 'play') this.checkRoundEnd();
     this.live();
   }
 
@@ -213,11 +216,12 @@ export class QueimadaMatch {
     this.event('grab', { by: pl.id, b: i });
   }
 
-  // dá para alcançar a bola sem sair da minha faixa da quadra?
+  // dá para alcançar a bola sem sair da minha faixa da quadra? (ponto mais perto da faixa até a bola)
   reachable(pl, b) {
     const [lo, hi] = zoneX(pl.team, pl.cem);
-    const r = this.level.grabR;
-    return b.x >= lo - r && b.x <= hi + r;
+    const nx = clamp(b.x, lo, hi);
+    const ny = clamp(b.y, QM.R, QM.H - QM.R * 0.5);
+    return Math.hypot(b.x - nx, b.y - ny) <= this.level.grabR - 4;
   }
 
   dropBall(pl) {
@@ -328,7 +332,7 @@ export class QueimadaMatch {
         const dx = b.x - pl.x;
         const dy = b.y - pl.y;
         const d = Math.hypot(dx, dy);
-        if (d <= this.level.grabR * 0.8) {
+        if (d <= this.level.grabR - 4) {
           pl.run = -1;
           this.doGrab(pl);
           return;
@@ -341,7 +345,13 @@ export class QueimadaMatch {
       }
     }
     const ox = pl.x;
+    const oy = pl.y;
     const moved = walkStep(pl, mx, my, dt);
+    // correndo até a bola mas preso (linha do meio, pneu): desiste em vez de andar para sempre
+    if (pl.run >= 0 && Math.hypot(pl.x - ox, pl.y - oy) < 0.5) {
+      pl.run = -1;
+      this.event('miss', { by: pl.id, why: 'far', x: Math.round(pl.x), y: Math.round(pl.y) });
+    }
     pl.moving = moved;
     if (moved && Math.abs(pl.x - ox) > 0.05) pl.dir = pl.x > ox ? 1 : -1;
     const st = moved ? 'walk' : 'idle';
@@ -691,9 +701,13 @@ export class QueimadaMatch {
   }
 
   afterOver() {
+    this.resetScores();
+    this.toLobby();
+  }
+
+  resetScores() {
     for (const m of this.members.values()) Object.assign(m, { pts: 0, hits: 0, catches: 0, dodges: 0 });
     this.round = 0;
-    this.toLobby();
   }
 
   // treino livre: todo mundo na quadra, 1 bola, ninguém é queimado
@@ -762,9 +776,10 @@ export class QueimadaMatch {
       p.push([pl.id, Math.round(pl.x), Math.round(pl.y), pl.dir, pl.st, r2(pl.t), pl.team === 'a' ? 0 : 1, pl.cem ? 1 : 0,
         pl.hold, pl.inv > 0 ? 1 : 0, r1(pl.dodgeCd), r1(pl.catchCd), r1(pl.holdT)]);
     }
-    // b: [x, y, z, st(0 solta,1 viva,2 segurada,3 congelada), time(-1/0/1), quem segura/arremessou]
+    // b: [x, y, z, st(0 solta,1 viva,2 segurada,3 congelada), time(-1/0/1), quem segura/arremessou, vx, vy, vz]
+    // (com a velocidade o cliente extrapola a bola até o "agora" do servidor: dá para reagir na hora certa)
     const b = this.balls.map((bl) => [Math.round(bl.x), Math.round(bl.y), Math.round(bl.z), BALL_ST[bl.st],
-      bl.team === 'a' ? 0 : bl.team === 'b' ? 1 : -1, bl.by || 0]);
+      bl.team === 'a' ? 0 : bl.team === 'b' ? 1 : -1, bl.by || 0, Math.round(bl.vx), Math.round(bl.vy), Math.round(bl.vz)]);
     return { t: MSG.QM_STATE, ph: this.phase, tm: r1(Math.max(0, this.timer)), rd: this.round, p, b };
   }
 

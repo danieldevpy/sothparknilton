@@ -56,6 +56,17 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - 🔜 T-333 Plateia do Gol a Gol na arquibancada (mesma ideia da T-313) e "replay" do K.O. para a plateia
 - 🔜 T-334 Estatísticas de torcida (quem mais torceu, "torcedor da noite")
 
+## Fase 1F — Minigame Queimada ✅ (v0.7.0, 2026-10-03)
+- ✅ T-340 Ginásio na praça (aceso/fechado, painel com partidas, ▶ Entrar / ➕ Nova partida Fácil|Difícil, notificação)
+- ✅ T-341 `QueimadaMatch` autoritativo: várias quadras, treino livre, fila compartilhada (1v1 → 2v2, entra quem espera), rotação, cemitério com volta, rodadas, meta de 50 pts, pódio e recomeço
+- ✅ T-342 Física 2.5D da bola (arco, força pela distância do clique, quique em paredes/pneus, rola), pegar no alcance, pegada por tempo (janela encolhe com a velocidade), escapou, esquiva/WHOOSH, tabela, "demorou", juiz devolve bola presa
+- ✅ T-343 Cliente: quadra procedural, poses novas no boneco, predição, bolas extrapoladas, mira com trajetória, efeitos, placar, convidar de dentro, celular (joystick + PEGAR/ESQUIVA/🎯) retrato e paisagem
+- ✅ T-344 Convite pelo cartão do player (`game:'queimada'`), `qmbot.js`, `queimada-ai.js`, `queimada-balance.js`, 15 testes
+- 🔜 T-345 Plateia do Ginásio (assistir sem entrar na fila) e torcida como no Dojo
+- 🔜 T-346 Bolas especiais em rodadas aleatórias (bola gigante, bola de neve que congela, 3 bolas = caos)
+- 🔜 T-347 Passe para o companheiro de time (e para o cemitério) e "pegada salva um queimado" (variante)
+- 🔜 T-348 Estatísticas persistentes (queimadas, pegadas, campeonatos) e título "rei da quadra"
+
 ## Fase 1D — Karatê: próximos 🔜
 - 🔜 T-326 Faixas (branca → preta) por vitórias, persistidas
 - 🔜 T-327 Golpe especial com barra de "ki" (enche ao apanhar/defender)

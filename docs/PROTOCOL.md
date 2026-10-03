@@ -12,7 +12,7 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 | `ping` | `n` (número) | A cada 2 s; o servidor responde `pong` com o mesmo `n` (latência). |
 | `emote` | `e` ∈ `wave, jump, dance, fart, sit` | `sit` = sentar no chão (pose até se mover). |
 | `interact` | `id`, `x?`, `y?` | `id`: `fountain`, `bench-N`, `lamp-N`, `lake` (+x,y na água), `duck` (+x,y), `ball`. |
-| `challenge` | `to`, `rematch?`, `game?` | Desafia. `game` ∈ `golagol` (padrão) \| `karate`. Se o alvo já tinha te desafiado, vira aceite (do jogo dele). |
+| `challenge` | `to`, `rematch?`, `game?` | Desafia. `game` ∈ `golagol` (padrão) \| `karate` \| `queimada`. Se o alvo já tinha te desafiado **para o mesmo jogo**, vira aceite. Queimada: quem já está numa quadra pode chamar (vários convites ao mesmo tempo) — quem aceitar entra na quadra de quem chamou; da praça, os dois criam uma quadra nova. |
 | `challenge_reply` | `from`, `accept` | Responde um convite. |
 | `gg_input` | `sy?` (chutador: y da bola), `charging?` (bool), `ky?` (goleiro: y alvo), `dive?` (`-1` cima / `1` baixo) | Só vale para quem está na partida e no papel certo. |
 | `gg_shoot` | `angle` (rad), `power` 0..1, `curve` -1..1 | Só o chutador, na fase `aim`. Ângulo é limitado a um cone para o gol adversário. |
@@ -21,6 +21,11 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 | `kt_watch` | `id` (luta) | Entrar na **plateia** de uma luta (ou trocar de luta). Recusa com `kt_unwatch` (`gone`/`full`/`busy`). O espectador "fica" na porta do Dojo da praça (`pose 'watch'`). |
 | `kt_unwatch` | — | Sair da plateia (reaparece na porta do Dojo). |
 | `kt_cheer` | `r` ∈ `go, clap, fire, wow, lol`, `side?` (id de um lutador, `0` = ninguém) | Torcida. 1 a cada 0,7 s; `side` escolhe por quem torce (placa). **Não afeta a luta.** |
+| `qm_create` | `hard` (bool) | Queimada: cria uma quadra nova no Ginásio e entra (treino livre até chegar alguém). |
+| `qm_join` | `id` | Entra numa partida existente (na quadra se estiver no treino; senão na **fila**). Recusa com `qm_exit` (`gone`/`full`/`busy`). |
+| `qm_leave` | — | Sai da partida (reaparece na porta do Ginásio). Na quadra no meio da rodada = conta como queimado. |
+| `qm_input` | `mx`, `my` (-1..1) | Movimento segurado (reenviar a cada ~150 ms). Só vale para quem está na quadra/cemitério. |
+| `qm_act` | `a` ∈ `throw, grab, dodge`; `x,y` (alvo do arremesso, coords da quadra); `dx,dy` (direção da esquiva) | `throw`: força = distância do alvo. `grab`: pega bola do chão no alcance; bola viva vindo → postura de **pegada**; fácil + bola longe → corre até ela. Durante o hit-stop, `grab` = pegada e `dodge` = esquiva salvam. |
 | `vc_invite` | `to` | Voz: convida `to` para o **meu** grupo (cria um se eu não tiver). `to` já em grupo → `vc_status in_group` (tem que pedir). Anti-spam 800 ms, até 6 pendentes. Se `to` já tinha me convidado/pedido, vira aceite. |
 | `vc_request` | `to` | Voz: pede para entrar no grupo de `to` (quem foi clicado aprova). Aceito → saio do meu grupo atual. |
 | `vc_reply` | `from`, `accept` | Responde convite/pedido de voz de `from`. |
@@ -32,7 +37,7 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 ## Servidor → Cliente
 | t | Campos | Quando |
 |---|---|---|
-| `welcome` | `v`, `you`, `map`, `players[]` (cada um com `vg` = grupo de voz, 0 = nenhum), `lamps{id:bool}`, `score{red,blue}`, `ball[x,y]\|null`, `match` (null ou `{left,right,first}`), `fights[]` (`{id,a,b,rd,wins,w}` lutas de karatê em andamento, com plateia) | Após `hello` válido |
+| `welcome` | `v`, `you`, `map`, `players[]` (cada um com `vg` = grupo de voz, 0 = nenhum), `lamps{id:bool}`, `score{red,blue}`, `ball[x,y]\|null`, `match` (null ou `{left,right,first}`), `qms[]` (partidas de Queimada, mesmo formato do `qm_live`), `fights[]` (`{id,a,b,rd,wins,w}` lutas de karatê em andamento, com plateia) | Após `hello` válido |
 | `join` | `player:{id,nick,look,x,y,dir,pose,vg}` | Alguém entrou (não vai para quem entrou) |
 | `leave` | `id` | Alguém saiu |
 | `snap` | `ts`, `p:[[id,x,y,dir,moving(0/1),pose]]`, `b:[x,y]\|null` | 15×/s (`b` null = bola livre escondida durante Gol a Gol) |
@@ -44,7 +49,7 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 | `error` | `msg`, `fatal?` | `fatal` = conexão será fechada (ex.: nick inválido) |
 | `pong` | `n` | Resposta ao `ping` |
 | `challenge` | `from`, `nick`, `rematch`, `ttl`, `game` | Convite recebido (expira em `ttl` ms) |
-| `ch_status` | `status`, `with`, `nick`, `game` | Resposta ao desafiante/convidado: `sent`, `declined`, `expired`, `busy`, `field_busy`, `gone`, `invalid` |
+| `ch_status` | `status`, `with`, `nick`, `game` | Resposta ao desafiante/convidado: `sent`, `declined`, `expired`, `busy`, `field_busy`, `full` (quadra de queimada lotada), `gone`, `invalid` |
 | `gg_start` | `left:{id,nick}`, `right:{id,nick}`, `first` | Partida começou (para todos — espectadores também) |
 | `gg_state` | `ph`, `tm`, `turn`, `sh`, `ch`, `tired`, `sy`, `b:[x,y,z]\|null`, `k:{left:[y,dive,diveT], right:[...]}` | 30×/s durante a partida |
 | `gg_event` | `kind`, ... | `turn{shooter,turn}`, `kick{id,power,curve}`, `save{by}`, `parry{by,x,y}`, `post{x,y}`, `out`, `over`, `weak`, `dead`, `timeout`, `tired{tired}`, `goal{by,side}`, `own{by,side}` |
@@ -57,6 +62,12 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 | `kt_watch` | `id`, `a:{id,nick}`, `b:{id,nick}`, `rd`, `wins`, `w` | Confirmação: você está na plateia (a partir daí recebe `kt_state`/`kt_event`/`kt_cheer` da luta) |
 | `kt_unwatch` | `id`, `reason` (`left`/`busy`/`gone`/`full`) | Saiu da plateia (`left` = pediu; `busy` = foi jogar) ou entrada recusada (`gone` = luta não existe; `full` = 24 lugares ocupados) |
 | `kt_cheer` | `by`, `r`, `side` | Torcida de alguém da plateia (para os lutadores e a plateia daquela luta) |
+| `qm_enter` | `id`, `ph`, `hard`, `rd`, `m`, `target` | Confirmação: você está na partida (a partir daí recebe `qm_state`/`qm_event`) |
+| `qm_exit` | `id`, `reason` (`left`/`full`/`gone`/`busy`) | Saiu da partida ou entrada recusada |
+| `qm_live` | `id`, `ph`, `hard`, `rd`, `m:[[pid, time('a'\|'b'\|''), lugar(0 fila,1 quadra,2 cemitério), pts]]` · ou `id`, `gone:1` | Para **todos** (lista do Ginásio; a praça esconde quem está lá). A cada entrada/saída/ponto/rodada. |
+| `qm_state` | `ph`, `tm`, `rd`, `p:[[id,x,y,dir,st,t,time(0=a,1=b),cem,hold,inv,dodgeCd,catchCd,holdT]]`, `b:[[x,y,z,st(0 solta,1 viva,2 segurada,3 hit-stop),time,by,vx,vy,vz]]` | 30×/s, **só para quem está na partida** (coords da quadra 0..1100 × 0..420). Com `vx,vy,vz` o cliente extrapola a bola. |
+| `qm_event` | `kind`, ... | Membros: `join/leave{id,nick}`, `round{round,a,b,queue}`, `go`, `throw{by,b,pow}`, `bank{b,x,y,tire}`, `hit{by,to,b,x,y,bank,pts,cem}`, `catch{by,from,b,x,y,pts,late}`, `fumble{by,b,x,y}`, `whoosh{by,b,x,y,last,pts}`, `dodge{by}`, `grab{by,b}`, `miss{by,why:far\|fast}`, `slow{by}`, `enter{id,team}`, `cem{id}`, `revive{id}`, `return{b,x,y}`, `roundEnd{winner,reason:wipe\|time,survivors,pts,round}`, `lobby` |
+| `qm_end` | `id`, `winner`, `winnerNick`, `rank:[[pid,nick,pts,hits,catches,dodges]]` | Para **todos**: alguém chegou na meta. A quadra zera e recomeça sozinha em 8 s. |
 | `vc_ask` | `from`, `nick`, `kind` (`invite`\|`request`), `ttl`, `size` | Convite para a voz / pedido para entrar no meu grupo (expira em `ttl` = 30 s). `size` = pessoas no grupo. |
 | `vc_status` | `status`, `with`, `nick` | `sent`, `asked`, `declined`, `expired`, `full`, `in_group`, `no_group`, `same`, `gone`, `invalid`, `cooldown`, `too_many` |
 | `vc_group` | `g:{id, owner, members:[{id, m, d}]}` ou `g:null` + `reason` (`left`/`kicked`/`dissolved`/`switch`), `ice?` | Estado do meu grupo (a cada mudança). `ice` (lista `RTCIceServer`: STUN + TURN com credencial temporária) só vai para quem acabou de entrar. Grupo que fica com 1 pessoa acaba (`dissolved`). |
@@ -72,6 +83,8 @@ Fases do Gol a Gol (`ph`): `countdown` → `aim` → `flight` → `result` → (
 Histórico: **v2** (2026-10-01) — desafios e Gol a Gol; `ball`/`b` podem ser `null`.
 Karatê (2026-10-01, ainda v2: só campos/mensagens novos e opcionais) — `game` no desafio, `fights` no welcome, `kt_*`.
 Plateia do Dojo (2026-10-03, ainda v2: mensagens novas e campos opcionais) — `kt_watch`, `kt_unwatch`, `kt_cheer`, `kt_live`, `rd/wins/w` em `fights`.
+Queimada (2026-10-03, ainda v2: só mensagens/campos novos) — `qm_*`, `qms[]` no welcome, `game:'queimada'` no
+desafio (+`match`, `hard`, `n` no convite), `ch_status full`, pose `'queimada'` (está dentro do Ginásio).
 Chat de voz (2026-10-03, ainda v2: só mensagens/campos novos) — `vc_*`, `vg` nos players; `maxPayload` do WebSocket
 subiu de 4 KB para 16 KB (o SDP de uma oferta WebRTC passa de 4 KB com escapes).
 O **áudio não passa pelo WebSocket**: vai direto entre navegadores (WebRTC/Opus) ou pelo TURN (coturn). Ver ARCHITECTURE.

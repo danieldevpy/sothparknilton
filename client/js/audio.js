@@ -90,6 +90,16 @@ const SOUNDS = {
   // plateia do Dojo
   kt_cheer: () => { noise({ dur: 0.5, vol: 0.06, freq: 1600 }); noise({ dur: 0.35, vol: 0.04, freq: 3200, delay: 0.08 }); },
   kt_notify: () => { tone({ type: 'triangle', from: 660, dur: 0.07, vol: 0.04 }); tone({ type: 'triangle', from: 990, dur: 0.1, vol: 0.04, delay: 0.08 }); },
+  // Queimada
+  qm_throw: () => { noise({ dur: 0.14, vol: 0.08, freq: 2800 }); tone({ type: 'sine', from: 500, to: 200, dur: 0.12, vol: 0.05 }); },
+  qm_bounce: () => tone({ type: 'sine', from: 220, to: 120, dur: 0.1, vol: 0.12 }),
+  qm_hit: () => { tone({ type: 'sine', from: 180, to: 50, dur: 0.22, vol: 0.26 }); noise({ dur: 0.18, vol: 0.22, freq: 1500 }); tone({ type: 'square', from: 900, to: 300, dur: 0.25, vol: 0.04, delay: 0.05 }); },
+  qm_catch: () => { tone({ type: 'square', from: 520, dur: 0.07, vol: 0.06 }); tone({ type: 'square', from: 780, dur: 0.07, vol: 0.06, delay: 0.07 }); tone({ type: 'square', from: 1040, dur: 0.14, vol: 0.06, delay: 0.14 }); },
+  qm_fumble: () => { tone({ type: 'sawtooth', from: 400, to: 180, dur: 0.25, vol: 0.06 }); },
+  qm_whoosh: () => { noise({ dur: 0.35, vol: 0.12, freq: 4500 }); tone({ type: 'sine', from: 900, to: 300, dur: 0.3, vol: 0.04 }); },
+  qm_grab: () => tone({ type: 'triangle', from: 440, to: 660, dur: 0.08, vol: 0.06 }),
+  qm_enter: () => { tone({ type: 'triangle', from: 392, dur: 0.08, vol: 0.05 }); tone({ type: 'triangle', from: 587, dur: 0.12, vol: 0.05, delay: 0.09 }); },
+  qm_revive: () => [392, 523, 659, 784].forEach((f, i) => tone({ type: 'sine', from: f, dur: 0.14, vol: 0.06, delay: i * 0.07 })),
 };
 
 export function play(name) {

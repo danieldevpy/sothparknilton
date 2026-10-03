@@ -416,3 +416,25 @@ test('lotação e partidas simultâneas', () => {
   ctx.room.handle(ps[1].id, { t: MSG.QM_JOIN, id: 999 });
   assert.equal(ctx.of(ps[1], MSG.QM_EXIT).at(-1).reason, 'gone');
 });
+
+test('correr até a bola nunca trava: bola na beira do alcance (linha do meio) é pega', () => {
+  const ctx = setup();
+  const { ps: [a], qm } = startMatch(ctx, ['Ana', 'Bia']);
+  const me = pl(qm, a);
+  const [lo, hi] = zoneX(me.team, false);
+  const edge = me.team === 'a' ? hi : lo;
+  Object.assign(me, { x: edge - (me.team === 'a' ? 60 : -60), y: 54 });
+  const ballX = me.team === 'a' ? edge + 42 : edge - 42;
+  Object.assign(qm.balls[0], { st: 'loose', x: ballX, y: 54, z: 0, vx: 0, vy: 0, vz: 0 });
+  for (const b of qm.balls.slice(1)) b.st = 'held';
+  ctx.room.handle(a.id, { t: MSG.QM_ACT, a: 'grab' });
+  ctx.run(1.5);
+  assert.ok(me.hold === 0 || me.run === -1, 'pegou ou desistiu (não fica andando para sempre)');
+  // bola fora do alcance de todos (atrás da linha, longe): o juiz devolve
+  const other = setup();
+  const { qm: q2 } = startMatch(other, ['Caio', 'Davi']);
+  Object.assign(q2.balls[0], { st: 'loose', x: 3, y: 3, z: 0, vx: 0, vy: 0, vz: 0 });
+  for (const p of q2.court.values()) if (p.team === 'b') Object.assign(p, { cem: false });
+  other.run(QM.BALL_RETURN + 1.5);
+  assert.ok(q2.balls[0].x > 40 || q2.court.size === 0);
+});

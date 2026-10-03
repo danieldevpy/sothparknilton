@@ -5,6 +5,7 @@ import { MAP } from '/shared/map.js';
 import { BALL_RADIUS } from '/shared/constants.js';
 import { blob, wobblyPoly, fillStroke, roundRect, rng, outlinedText, boilFrame, INK, FONT } from './paint.js';
 import { drawDojoBuilding } from './dojohouse.js';
+import { drawGymBuilding } from './gymhouse.js';
 
 const SNOW = '#f3f6fb';
 const PATH = '#dcd3c2';
@@ -66,6 +67,7 @@ export function prerenderBackground(map = MAP) {
   // casas
   map.houses.forEach((h, i) => drawHouse(ctx, h, i));
   if (map.dojo) drawDojoBuilding(ctx, map.dojo);
+  if (map.gym) drawGymBuilding(ctx, map.gym);
 
   // pontinhos de textura na neve
   for (let i = 0; i < 900; i++) {

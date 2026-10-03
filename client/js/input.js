@@ -15,8 +15,15 @@ export function setupInput(game, hud, canvas) {
   const held = new Set();
   const gg = game.gg;
   const kt = game.kt;
+  const qm = game.qm;
 
   canvas.addEventListener('pointermove', (ev) => {
+    if (qm.active()) {
+      qm.pointerMove(ev);
+      canvas.style.cursor = 'crosshair';
+      hud.tooltip(null);
+      return;
+    }
     if (kt.active()) {
       canvas.style.cursor = 'default';
       hud.tooltip(null);
@@ -40,6 +47,11 @@ export function setupInput(game, hud, canvas) {
   });
 
   canvas.addEventListener('pointerdown', (ev) => {
+    if (qm.active()) {
+      hud.blurChat();
+      qm.pointerDown(ev);
+      return;
+    }
     if (kt.active()) {
       hud.blurChat();
       kt.pointerDown(ev);
@@ -58,8 +70,11 @@ export function setupInput(game, hud, canvas) {
     if (hit) game.interact(hit);
     else game.moveTo(w.x, w.y);
   });
-  window.addEventListener('pointerup', () => gg.pointerUp(performance.now()));
-  canvas.addEventListener('contextmenu', (ev) => { if (kt.active()) ev.preventDefault(); });
+  window.addEventListener('pointerup', (ev) => {
+    qm.pointerUp(ev);
+    gg.pointerUp(performance.now());
+  });
+  canvas.addEventListener('contextmenu', (ev) => { if (kt.active() || qm.active()) ev.preventDefault(); });
   canvas.addEventListener('wheel', (ev) => {
     if (gg.isPlaying() && gg.wheel(ev)) ev.preventDefault();
   }, { passive: false });
@@ -74,6 +89,10 @@ export function setupInput(game, hud, canvas) {
     if (ev.key === 'Enter') {
       ev.preventDefault();
       hud.focusChat();
+      return;
+    }
+    if (qm.key(ev, true, performance.now())) {
+      ev.preventDefault();
       return;
     }
     if (kt.key(ev, true, performance.now())) {
@@ -96,6 +115,7 @@ export function setupInput(game, hud, canvas) {
   });
   window.addEventListener('keyup', (ev) => {
     held.delete(ev.code);
+    qm.key(ev, false, performance.now());
     kt.key(ev, false, performance.now());
     gg.key(ev, false, performance.now());
   });
@@ -103,11 +123,12 @@ export function setupInput(game, hud, canvas) {
     held.clear();
     gg.held.clear();
     kt.clearKeys();
+    qm.clearKeys();
   });
 
   // enquanto segura uma direção, manda um destino curto à frente
   function steer() {
-    if (!held.size || gg.isPlaying() || kt.active()) return;
+    if (!held.size || gg.isPlaying() || kt.active() || qm.active()) return;
     const me = game.myServerPos();
     if (!me) return;
     let dx = 0;

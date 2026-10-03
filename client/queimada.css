@@ -1,0 +1,239 @@
+/* ---------- Queimada (Ginásio) ----------
+   #qm-ui, #gym-panel e #qm-notes ficam fora do #hud (por cima do #m-ui no celular). */
+
+#qm-ui { position: fixed; inset: 0; z-index: 7; pointer-events: none; font-family: var(--font); }
+#qm-ui button { font-family: inherit; pointer-events: auto; touch-action: manipulation; cursor: pointer; }
+
+/* na quadra, some o que é da praça */
+body.qm-on #emotes, body.qm-on .help, body.qm-on #score, body.qm-on #zone-toast,
+body.qm-on #gg-bar, body.qm-on #gg-help, body.qm-on #online-list, body.qm-on #online-btn { display: none !important; }
+body.qm-on:not(.mobile) #chat-log { opacity: .85; max-height: 92px; bottom: 150px; }
+body.mobile.qm-on #m-ui > :not(.m-top):not(.m-panel) { display: none !important; }
+
+/* sair / convidar */
+.qm-nav { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
+.qm-nav button {
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 999px; padding: 5px 12px;
+  font-weight: 700; font-size: 14px; box-shadow: 3px 3px 0 var(--ink);
+}
+.qm-exit { background: var(--yellow) !important; }
+.qm-inv-btn { background: #c9f3d2 !important; }
+
+/* placar da partida */
+#qm-board {
+  position: absolute; top: 12px; left: 12px; width: 220px; pointer-events: none;
+  background: rgba(255, 253, 246, .93); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 3px 3px 0 var(--ink);
+  padding: 6px 8px; font-size: 13px;
+}
+.qb-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.qb-head small { margin-left: auto; color: #6a5a4a; font-weight: 700; }
+.qb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.qb-row { display: grid; grid-template-columns: 12px 1fr auto 30px; gap: 5px; align-items: center; padding: 1px 3px; border-radius: 6px; }
+.qb-row.me { background: #fff1a8; }
+.qb-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); background: #bbb; }
+.qb-dot.a { background: var(--red); }
+.qb-dot.b { background: var(--blue); }
+.qb-nick { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qb-slot { font-size: 12px; }
+.qb-pts { text-align: right; }
+.gp-lvl { font-size: 11px; font-weight: 700; border: 2px solid var(--ink); border-radius: 999px; padding: 0 6px; }
+.gp-lvl.easy { background: #b8f0c4; }
+.gp-lvl.hard { background: #ffb3a3; }
+
+/* status: fila / cemitério / treino */
+#qm-status {
+  position: absolute; bottom: 112px; left: 50%; transform: translateX(-50%); max-width: min(560px, calc(100vw - 24px));
+  background: rgba(20, 20, 30, .82); color: #ffe14d; border: 2px solid var(--ink); border-radius: 12px;
+  padding: 5px 12px; font-weight: 700; font-size: 15px; text-align: center; box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* ajuda (desktop) */
+#qm-help {
+  position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%);
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: min(980px, calc(100vw - 24px));
+}
+.qm-key {
+  display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-items: center;
+  background: rgba(255, 253, 246, .92); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink);
+  padding: 4px 9px;
+}
+.qm-key > span { grid-row: span 2; display: flex; gap: 3px; }
+.qm-key b { font-size: 13px; line-height: 1.1; }
+.qm-key small { font-size: 11px; line-height: 1.1; color: #5a4a3a; }
+.qm-k-throw { background: #ffd9c9; }
+.qm-k-grab { background: #d6f5dc; }
+.qm-k-dodge { background: #d9f0ff; }
+#qm-ui.qm-has-ball .qm-k-throw { outline: 3px solid var(--red); animation: qm-pulse .8s infinite alternate; }
+@keyframes qm-pulse { to { transform: translateY(-3px); } }
+#qm-ui:not(.qm-playing) #qm-help, #qm-ui:not(.qm-playing) #qm-touch { display: none !important; }
+
+/* toque (celular) */
+#qm-touch { display: none; }
+body.mobile #qm-help { display: none; }
+body.mobile #qm-touch { display: block; position: absolute; inset: 0; pointer-events: none; }
+.qm-pad {
+  position: absolute; right: calc(14px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom));
+  display: grid; grid-template-columns: repeat(2, 78px); grid-template-rows: 62px 78px; gap: 8px; pointer-events: none;
+}
+.qm-b {
+  position: relative; overflow: hidden; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
+  border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); font-size: 28px; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0;
+}
+.qm-b small { font-size: 11px; font-weight: 700; }
+.qm-b:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.qm-b i { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(20, 30, 60, .55); pointer-events: none; }
+.qm-b.cool { filter: saturate(.4); }
+.qm-b-grab { background: #9dfcb4; grid-column: 1; grid-row: 2; }
+.qm-b-dodge { background: #bfe6ff; grid-column: 2; grid-row: 2; }
+.qm-b-auto { background: #ffb59a; grid-column: 1 / span 2; grid-row: 1; font-size: 22px; flex-direction: row; gap: 8px; opacity: .45; }
+#qm-ui.qm-has-ball .qm-b-auto { opacity: 1; animation: qm-pulse .6s infinite alternate; }
+
+/* convidar (dentro da quadra) */
+#qm-invite {
+  position: absolute; top: 60px; right: 12px; width: min(300px, calc(100vw - 24px)); max-height: 60vh; overflow: auto;
+  pointer-events: auto; background: var(--paper); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink);
+  padding: 8px 10px;
+}
+.qi-head { display: flex; align-items: center; justify-content: space-between; font-size: 16px; margin-bottom: 4px; }
+.qi-list { display: flex; flex-direction: column; gap: 5px; }
+.qi-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff6e6; border: 2px solid var(--ink); border-radius: 10px; padding: 4px 6px; }
+.qi-nick { display: inline-flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; }
+.qi-nick i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); flex: none; }
+.qi-call {
+  background: var(--green); color: #fff; text-shadow: 1px 1px 0 var(--ink); font-weight: 700; border: 2px solid var(--ink);
+  border-radius: 10px; padding: 3px 10px;
+}
+.qi-call:disabled { background: #aaa; }
+
+/* pódio (fim de jogo) */
+#qm-podium { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(20, 30, 50, .35); pointer-events: auto; }
+.qp-card {
+  background: var(--paper); border: 4px solid var(--ink); border-radius: 18px; box-shadow: 6px 6px 0 var(--ink);
+  padding: 12px 18px; width: min(420px, calc(100vw - 24px)); text-align: center; animation: dp-in .35s cubic-bezier(.3, 1.6, .6, 1);
+}
+.qp-emoji { font-size: 44px; }
+.qp-card h2 { margin: 2px 0 8px; font-size: 21px; }
+.qp-rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.qp-rank li { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 6px; align-items: center; background: #fff6e6; border: 2px solid var(--ink); border-radius: 10px; padding: 3px 8px; }
+.qp-rank li.me { background: #fff1a8; }
+.qp-pos { font-size: 18px; }
+.qp-stats { font-size: 12px; color: #6a5a4a; }
+.qp-sub { font-size: 13px; font-weight: 700; color: #6a5a4a; margin: 8px 0; }
+.qp-actions { display: flex; gap: 8px; justify-content: center; }
+.qp-actions button { border: 3px solid var(--ink); border-radius: 12px; padding: 7px 14px; font-weight: 700; font-size: 15px; box-shadow: 2px 2px 0 var(--ink); }
+.qp-stay { background: var(--green); color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.qp-out { background: var(--yellow); }
+
+/* ---------- painel do Ginásio (clicar no prédio) ---------- */
+#gym-panel {
+  position: fixed; z-index: 8; top: 76px; left: 50%; transform: translateX(-50%);
+  width: min(470px, calc(100vw - 24px)); max-height: 72vh; overflow: auto;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 5px 5px 0 var(--ink);
+  padding: 10px 12px 8px; font-family: var(--font); animation: dp-in .3s cubic-bezier(.3, 1.6, .6, 1);
+}
+.gp-head { display: flex; align-items: center; justify-content: space-between; font-size: 18px; margin-bottom: 6px; }
+.gp-x { border: none; background: none; font-size: 26px; line-height: 1; padding: 0 4px; cursor: pointer; }
+.gp-list { display: flex; flex-direction: column; gap: 8px; }
+.gp-row {
+  display: flex; align-items: center; gap: 10px; justify-content: space-between;
+  background: #fff6e6; border: 3px solid var(--ink); border-radius: 12px; padding: 8px 10px;
+}
+.gp-txt { min-width: 0; }
+.gp-title { display: flex; align-items: center; gap: 6px; font-size: 16px; }
+.gp-teams { display: flex; align-items: center; gap: 6px; font-size: 15px; flex-wrap: wrap; font-weight: 700; margin-top: 2px; }
+.gp-team.a { color: #c0321f; }
+.gp-team.b { color: #2a55b5; }
+.gp-x-sign { color: #8a6a4a; }
+.gp-info { font-size: 12px; font-weight: 700; color: #6a5a4a; margin-top: 2px; }
+.gp-join {
+  flex: none; background: var(--red); color: #fff; text-shadow: 1px 1px 0 var(--ink); font-weight: 700; font-size: 15px;
+  border: 3px solid var(--ink); border-radius: 12px; padding: 8px 12px; box-shadow: 2px 2px 0 var(--ink); cursor: pointer;
+}
+.gp-join:disabled { background: #bbb; cursor: default; }
+.gp-empty { text-align: center; font-weight: 700; margin: 10px 0; }
+.gp-create { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+.gp-create-t { font-weight: 700; }
+.gp-new { border: 3px solid var(--ink); border-radius: 12px; padding: 7px 14px; font-weight: 700; font-size: 15px; box-shadow: 2px 2px 0 var(--ink); }
+.gp-new.easy { background: #b8f0c4; }
+.gp-new.hard { background: #ffb3a3; }
+.gp-tip { font-size: 12px; font-weight: 700; color: #7a6a5a; text-align: center; margin: 8px 0 2px; }
+
+/* ---------- notificação: "fulano abriu uma quadra" ---------- */
+#qm-notes {
+  position: fixed; z-index: 8; top: 48px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; font-family: var(--font);
+}
+body.kt-on #qm-notes { display: none; }
+.qm-note {
+  position: relative; overflow: hidden; pointer-events: auto; display: flex; align-items: center; gap: 8px;
+  background: rgba(255, 253, 246, .96); border: 2px solid var(--ink); border-radius: 999px; box-shadow: 2px 2px 0 var(--ink);
+  padding: 3px 4px 3px 11px; font-size: 13px; max-width: calc(100vw - 24px); animation: kn-in .35s cubic-bezier(.3, 1.6, .6, 1);
+}
+.qn-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.qn-sub { color: #6a5a4a; }
+.qn-join {
+  flex: none; background: var(--blue); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 2px 9px;
+  font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer; text-shadow: 1px 1px 0 var(--ink);
+}
+.qn-timer { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--blue); transform-origin: left; animation: kn-time linear forwards; }
+
+/* cartão do player e convite */
+.pc-queimada { background: linear-gradient(90deg, var(--red) 0 50%, var(--blue) 50% 100%); }
+.invite.qm-invite { background: #e6efff; }
+
+/* ---------- celular (body.mobile): retrato e paisagem ---------- */
+body.mobile #qm-ui, body.mobile #gym-panel, body.mobile #qm-notes { font-family: var(--m-font); }
+body.mobile .qm-nav { top: calc(10px + var(--sat)); right: calc(10px + var(--sar)); }
+body.mobile .qm-nav button {
+  background: var(--m-glass) !important; color: #fff; border: 2px solid var(--m-glass-border); border-radius: 15px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .25); padding: 0 12px; height: 48px; font-size: 18px;
+}
+body.mobile .qm-long { display: none; }
+body.mobile #qm-board {
+  top: calc(64px + var(--sat)); left: calc(10px + var(--sal)); width: 168px; font-size: 12px; padding: 4px 6px;
+  background: rgba(255, 253, 246, .85);
+}
+body.mobile #qm-board .qb-head small { display: none; }
+body.mobile #qm-status { top: calc(108px + var(--sat)); bottom: auto; font-size: 13px; }
+body.mobile #qm-invite { top: calc(64px + var(--sat)); right: calc(10px + var(--sar)); }
+body.mobile #gym-panel {
+  top: auto; bottom: calc(10px + var(--sab)); left: calc(10px + var(--sal)); right: calc(10px + var(--sar));
+  width: auto; transform: none; max-height: 66dvh;
+}
+body.mobile .gp-join { padding: 12px 14px; font-size: 16px; border-radius: 14px; }
+body.mobile .gp-new { padding: 10px 16px; font-size: 16px; }
+body.mobile #qm-notes { top: calc(66px + var(--sat)); }
+body.mobile .qn-join { padding: 5px 11px; font-size: 13px; }
+@media (orientation: landscape) {
+  body.mobile #qm-board { top: calc(64px + var(--sat)); width: 140px; font-size: 11px; padding: 2px 5px; opacity: .85; max-height: calc(100dvh - 90px); overflow: hidden; }
+  body.mobile #qm-board .qb-head { display: none; }
+  body.mobile #qm-board .qb-row { grid-template-columns: 10px 1fr auto 22px; gap: 3px; }
+  body.mobile #qm-board .qb-dot { width: 10px; height: 10px; }
+  body.mobile #qm-status { top: calc(10px + var(--sat)); max-width: 46vw; }
+  body.mobile .qm-pad { grid-template-columns: repeat(2, 70px); grid-template-rows: 54px 70px; }
+}
+@media (orientation: portrait) {
+  /* placar vira uma faixa de fichinhas sob o relógio */
+  body.mobile #qm-board {
+    top: calc(106px + var(--sat)); left: calc(10px + var(--sal)); right: calc(10px + var(--sar)); width: auto;
+    display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-width: 2px; box-shadow: 2px 2px 0 var(--ink);
+  }
+  body.mobile #qm-board .qb-head { margin: 0; flex: none; }
+  body.mobile #qm-board .qb-head b { display: none; }
+  body.mobile #qm-board .qb-list { flex-direction: row; flex-wrap: wrap; gap: 3px 8px; }
+  body.mobile #qm-board .qb-row { display: flex; gap: 3px; padding: 0 3px; }
+  body.mobile #qm-board .qb-nick { max-width: 64px; }
+  body.mobile #qm-board .qb-dot { width: 10px; height: 10px; }
+  body.mobile #qm-status { top: auto; bottom: calc(196px + var(--sab)); }
+}
+/* telas baixas (celular deitado): pódio compacto */
+@media (max-height: 480px) {
+  .qp-card { padding: 6px 12px; max-height: calc(100dvh - 12px); overflow: auto; }
+  .qp-emoji { font-size: 22px; }
+  .qp-card h2 { font-size: 16px; margin: 0 0 4px; }
+  .qp-rank { gap: 2px; }
+  .qp-rank li { padding: 1px 8px; font-size: 13px; }
+  .qp-sub { margin: 4px 0; }
+  .qp-actions button { padding: 4px 12px; font-size: 14px; }
+}

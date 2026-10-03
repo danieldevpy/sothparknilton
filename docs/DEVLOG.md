@@ -3,6 +3,34 @@
 Diário de desenvolvimento. Entrada nova **no topo**. Formato:
 `## AAAA-MM-DD — título` · o que foi feito · decisões · pendências.
 
+## 2026-10-03 — v0.7.0: Queimada no Ginásio 🔴🔵 (feita no worktree `feature/queimada`)
+Pedido: implementar a queimada desenhada com outro modelo (pegada, arremesso, defesa, caos, fila/squad, modos de
+pontuação), com uma "casa" no mapa para entrar em partidas existentes e convites como nos outros jogos — e melhorar.
+
+**Feito**
+- Mapa: `MAP.gym` (prédio à esquerda, em cima do lago; porta andável em 370,322) + `render/gymhouse.js`.
+- `shared/queimada.js` (QM, LEVELS fácil/difícil, física da bola 2.5D, prévia da trajetória, janela de pegada).
+- `server/minigames/Queimada.js` (`QueimadaMatch`): treino livre, fila compartilhada, 1v1/2v2 com 1/2 bolas, rotação,
+  cemitério com volta, hit-stop de 0,14 s (lag), pegada/escapou/esquiva/WHOOSH/tabela/demorou/juiz, rodadas de 75 s,
+  meta 50, pódio e recomeço. `Room`: `qms`/`qmOf`, `qm_create/join/leave`, convite `game:'queimada'` (de dentro da
+  quadra chama várias pessoas), `busyBeyondQm`, quem está na quadra não assiste o dojo nem é desafiado.
+- Cliente: `minigames/gym.js` (prédio, painel, notificação), `minigames/queimada.js` (cena, predição, bolas
+  extrapoladas, mira, controles, HUD, convidar, pódio), `render/court.js` (quadra, pneus, bola, placar na parede),
+  poses `qhold/qthrow/qcatch/qdodge/qstun` no boneco, `queimada.css` (desktop + celular), sons `qm_*`,
+  botão "Chamar p/ Queimada" no cartão do player.
+- Bots/ferramentas: `scripts/queimada-ai.js`, `scripts/qmbot.js` (N bots / bot que te chama), `scripts/queimada-balance.js`.
+- 15 testes novos (`tests/queimada.test.js`), 88 no total. Decisões D-027..D-029.
+
+**Bugs achados no caminho**: `speedOf` com `hold = -1`; bola que cai no pé virava "morta" antes do acerto; bola presa em
+cemitério vazio travava a rodada (→ juiz); correr até a bola na beira do alcance ficava andando para sempre; segurar
+demais + pega-sozinho pegava de volta na hora; pontos não zeravam quando a partida voltava ao treino.
+
+**Verificado no navegador** (porta 3100, `qmbot` 1 e 4 bots + bots que convidam): prédio aceso e painel, criar/entrar,
+treino livre (correr até a bola, mira com trajetória, arremesso por arrastar), 2v2 com fila no banco, QUEIMADO!/cemitério/
+entrada da fila, partida até o pódio e recomeço, convite da praça aceito → entra na quadra do bot, painel ➕ Convidar,
+celular retrato 375×812 (câmera segue, placar em fichinhas) e paisagem 812×375 (placar compacto, pódio cabe). Console e
+servidor sem erros.
+
 ## 2026-10-03 — v0.6.0: Plateia do Dojo — assistir lutas de Karatê 👀 (feita no worktree `feature/arena`)
 Feito em paralelo ao chat de voz (`feature/voice`), sem mexer na mecânica da luta (`KT`/`MOVES` intactos).
 

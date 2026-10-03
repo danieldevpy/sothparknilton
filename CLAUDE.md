@@ -25,6 +25,8 @@ node scripts/ktbot.js                    # bot de Karatê (aceita desafios; esti
 node scripts/ktbot.js SenseiBot SeuNick  # bot que te desafia pro karatê quando você entrar
 node scripts/karate-balance.js 40        # estilos de IA lutando entre si (equilíbrio dos golpes)
 node scripts/fanbot.js 4                 # 4 bots de torcida: entram na plateia do Dojo quando há luta
+node scripts/qmbot.js 3                  # 3 bots de Queimada no Ginásio (com você = 2v2); `qmbot.js Bot SeuNick` te chama
+node scripts/queimada-balance.js 20 2    # IAs jogando queimada (1v1; use 4 para 2v2, `dificil` p/ o modo difícil)
 ./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
 node scripts/netcheck.js ws://204.157.124.113:3000/ws   # mede ping/jitter/travadas contra um servidor
 node scripts/voice-e2e.mjs               # E2E do chat de voz (Chrome headless + mic falso; precisa `npm i --no-save puppeteer`)
@@ -50,6 +52,10 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/minigames/arena.js` | Prédio do Dojo na praça: lutas ao vivo, painel "👀 Assistir", notificação de luta começando |
 | `client/js/minigames/karate-watch.js` | Interface do espectador: AO VIVO, empolgação, locutor, torcida, outra luta, sair |
 | `client/js/render/dojohouse.js` / `crowd.js` | Prédio do Dojo (fechado/AO VIVO) e torcida dentro do dojo, procedurais |
+| `server/minigames/Queimada.js` | Partida de Queimada numa quadra do Ginásio (fila, 1v1→2v2, cemitério, pontos) — várias via `room.qms` |
+| `shared/queimada.js` | Constantes (`QM`, `LEVELS`) e física 2.5D da bola, usadas no servidor e na mira/predição do cliente |
+| `client/js/minigames/gym.js` / `queimada.js` | Prédio do Ginásio (lista/entrar/criar) e cena da quadra (controles, mira, HUD, pódio) |
+| `client/js/render/gymhouse.js` / `court.js` | Prédio do Ginásio e quadra (pneus, bola, placar), procedurais |
 | `client/js/main.js` | Login (nick + visual), conexão, start |
 | `client/js/game.js` | Estado do cliente, interpolação, câmera, loop de render, hit-test |
 | `client/js/render/*` | Desenho procedural: `paint.js` (helpers), `character.js`, `world.js`, `bubbles.js`, `fx.js` |
@@ -63,7 +69,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/mobile.js` | Interface mobile (estilo Roblox): detecção, joystick, botões de ação, painéis; ativa `body.mobile` |
 | `client/assets/generated/` | Assets gerados por IA (Kairogen) — ver `docs/ASSETS.md` |
 | `tests/` | Testes `node:test` |
-| `scripts/` | `bots.js` (bots da sala), `ggbot.js` (bot de Gol a Gol), `golagol-balance.js` (simulador de equilíbrio), `ktbot.js` + `karate-ai.js` + `karate-balance.js` (bot/IA/simulador do Karatê) |
+| `scripts/` | `bots.js` (bots da sala), `ggbot.js` (bot de Gol a Gol), `golagol-balance.js` (simulador de equilíbrio), `ktbot.js` + `karate-ai.js` + `karate-balance.js` (bot/IA/simulador do Karatê), `qmbot.js` + `queimada-ai.js` + `queimada-balance.js` (Queimada) |
 
 ## Documentação (manter atualizada!)
 - `docs/ARCHITECTURE.md` — como as peças conversam, ticks, interpolação
@@ -90,8 +96,15 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 12. Mexeu em `KT`/`MOVES` (`shared/karate.js`)? Rode `scripts/karate-balance.js` — nenhum estilo de um golpe só deve vencer o `mixed` com folga — e registre em DECISIONS.
 13. **Voz**: o áudio nunca passa pelo servidor do jogo (WebRTC P2P/TURN). Regra de grupo nova vai em `server/VoiceHub.js` + `tests/voice.test.js`; mexeu no cliente de voz, rode `scripts/voice-e2e.mjs`. O microfone só pode ficar aberto no grupo, testando ou com convite esperando.
 14. **Mobile**: toda UI nova precisa funcionar em `body.mobile` (retrato e paisagem) — teste com `?mobile=1` e viewport 375×812 / 812×375. Controles de toque novos vão em `mobile.js` (botões em `#m-actions` com `data-show`).
+15. Mexeu em `QM`/`LEVELS` (`shared/queimada.js`)? Rode `scripts/queimada-balance.js` (1v1 e 2v2) e registre em DECISIONS.
 
 ## Estado atual
+**v0.7.0 — Queimada no Ginásio (2026-10-03)**: novo prédio na praça (à esquerda, em cima do lago). Clique → lista
+de quadras (▶ Entrar) ou ➕ Nova partida (Fácil/Difícil); ou cartão do player → 🔴🔵 Chamar p/ Queimada. Fila
+compartilhada (1v1 → 2v2, quem espera entra quando alguém é queimado), cemitério (volta acertando alguém), arremesso
+com trajetória e força pela distância, pegada por tempo, esquiva/WHOOSH, tabela nas paredes/pneus, modo Híbrido até 50.
+Ver GAME_DESIGN e D-027..D-029.
+
 **v0.6.0 — Plateia do Dojo (2026-10-03)**: o 3º prédio da praça é o **Dojo**: com luta rolando ele
 acende (AO VIVO) e o clique lista as lutas (`Nilton × Daniel — 👀 Assistir`); o espectador senta na plateia do dojo,
 torce (placas, reações, coro, ola) e ouve o locutor, **sem poder interferir**. Notificação pequena quando uma luta começa.

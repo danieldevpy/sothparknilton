@@ -118,6 +118,36 @@
   `seat` → posição (`seatOrder`: do meio para as pontas na fila de trás).
 - **Banda**: cada espectador custa o mesmo que um lutador (30 `kt_state`/s). Lotação 24 por luta (`ARENA.MAX_WATCHERS`).
 
+## Minigame Queimada (Ginásio)
+```
+ praça: GymClient (client/js/minigames/gym.js) ── lista de partidas (welcome.qms / qm_live / qm_end)
+   prédio do Ginásio (render/gymhouse.js: fixo no fundo + parte viva) · painel ▶ Entrar / ➕ Nova partida · notificação
+ qm_create / qm_join / convite aceito ──▶ Room.qmEnter(): room.qms(id → partida), room.qmOf(pid → partida),
+                                         pose 'queimada', posição = porta do Ginásio, QueimadaMatch.add()
+ QueimadaMatch (server/minigames/Queimada.js): members + line (fila/rotação) + court (bonecos) + balls
+   tick: lobby/count (treino livre) → intro → play (stepPlayer, stepBall, acertos, fila entrando) → end → over
+   qm_state/qm_event só para os membros; qm_live (placar/lista) e qm_end para todos
+ shared/queimada.js → QM, LEVELS, walkStep, throwVelocity, stepBall, predictPath, catchOk (servidor + cliente)
+ client/js/minigames/queimada.js → QueimadaClient: cena própria; Game.frame() desvia para qm.frame() quando ativo
+```
+- **Instância**: a quadra tem coordenadas próprias (1100 × 420, com os dois cemitérios); várias partidas ao mesmo tempo.
+  `isBusy()` inclui `qmOf` (não anda/interage/é desafiado na praça); `busyBeyondQm()` deixa quem está numa quadra
+  **convidar** gente para ela.
+- **Bola 2.5D** (`stepBall`): x/y no chão + z (altura) com gravidade; quica nas 4 paredes e nos 2 pneus (só abaixo de
+  34 px de altura), perde força no chão e rola até parar. **Viva** desde o arremesso até tocar o chão (parede mantém
+  viva = "tabela"). O acerto é checado **antes** do chão (bola que pega no pé queima).
+- **Lag**: (1) **hit-stop de 0,14 s** — a bola congela no alvo antes de decidir; `grab`/`dodge` que chegam nesse
+  intervalo viram pegada/esquiva (compensa ~140 ms de atraso sem rebobinar nada). (2) O cliente **extrapola** as bolas
+  com `vx,vy,vz` até "agora + rtt" (onde a bola vai estar quando o meu comando chegar) e para a bola no primeiro
+  adversário — dá para reagir no tempo certo. O próprio boneco é previsto (andar/esquiva/arremesso, e a bola que eu
+  arremesso sai da mão na hora); os outros são interpolados com atraso adaptativo.
+- **Bola presa**: parada fora do alcance de todos por 1,2 s (cemitério vazio, lado do adversário no treino) → o "juiz"
+  rola de volta para a faixa mais perto (`return`).
+- **UI**: `#qm-ui` (placar, status de fila/cemitério, ajuda no desktop, joystick + PEGAR/ESQUIVA/🎯 no celular, convidar,
+  pódio) acima do `#m-ui`; `body.qm-on` esconde o que é da praça.
+- **Bots**: `scripts/queimada-ai.js` (IA que só aperta botões, com habilidade/reação) é usada pelo `qmbot.js` (WebSocket,
+  estima velocidades pelos estados) e pelo `queimada-balance.js` (Room real em memória, tempo simulado).
+
 ## Chat de voz por grupos (WebRTC)
 ```
  navegador A ──vc_invite/vc_request/vc_reply──▶ server/VoiceHub.js (room.voice)   grupos, convites, mudo

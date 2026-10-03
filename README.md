@@ -53,6 +53,23 @@ Clique em outro player → **Desafiar: Karatê**. Vocês vão para o **dojo** (l
 Andar: WASD/setas. Repetir sempre o mesmo golpe deixa ele **previsível** (menos dano).
 Sem ninguém? `node scripts/ktbot.js` cria um adversário (`node scripts/ktbot.js SenseiBot SeuNick` te desafia).
 
+## 🔴🔵 Minigame: Queimada
+Clique no **Ginásio** (prédio de tijolo à esquerda, em cima do lago) → **▶ Entrar** numa partida aberta ou
+**➕ Nova partida** (Fácil / Difícil). Também dá para chamar alguém: clique no boneco → **Chamar p/ Queimada**
+(de dentro da quadra, **➕ Convidar**). 1v1 com 2–3 pessoas, **2v2** com 4+; quem chega espera na **fila** e entra
+quando alguém é queimado. Queimado vai para o **cemitério** (atrás do time adversário) e volta se acertar alguém de lá.
+
+| Controle | Ação |
+|---|---|
+| `WASD` / setas | andar (cada time no seu lado) |
+| com a bola: **segurar e soltar o clique** | arremessar onde soltou — longe = mais forte (aparece a trajetória) · `F` arremessa no mouse |
+| sem bola: **clicar na bola** / `E` | pegar a bola do chão · bola vindo no ar = **pegada** (na hora H!) |
+| sem bola: **clicar fora** / `Espaço` / botão direito | **esquivar** para lá (bem no último segundo = WHOOSH!) |
+
+Pontos: acerto **5** (+2 de **tabela**, se quicou na parede) · pegada **3** · esquiva no último segundo **1** ·
+último(s) de pé na rodada **10**. Primeiro a **50** vence; a quadra recomeça sozinha.
+Sem ninguém? `node scripts/qmbot.js 3` coloca 3 bots no Ginásio (`node scripts/qmbot.js Bot SeuNick` te chama).
+
 ## O mapa: Praça Central
 - **Praça** — fonte no centro, bancos, postes de luz.
 - **Lago** — patos nadando, píer, pedras para jogar na água.

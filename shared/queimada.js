@@ -121,7 +121,7 @@ export function clampPlayer(p) {
 
 export function speedOf(p) {
   let s = QM.SPEED;
-  if (p.hold) s *= QM.HOLD_SPEED;
+  if (p.hold >= 0) s *= QM.HOLD_SPEED; // hold = índice da bola segurada (-1 = nenhuma)
   if (p.st === 'catch') s *= QM.CATCH_SPEED;
   return s;
 }

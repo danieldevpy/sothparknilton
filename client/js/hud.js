@@ -155,7 +155,7 @@ export class Hud {
   // ---------- desafios / Gol a Gol ----------
 
   // Cartão ao clicar em outro player.
-  playerCard(p, sx, sy, { busy, onChallenge, onKarate, onWave, voice }) {
+  playerCard(p, sx, sy, { busy, onChallenge, onKarate, onQueimada, onWave, voice }) {
     const card = $('#player-card');
     card.replaceChildren();
     const head = el('div', 'pc-head');
@@ -171,9 +171,12 @@ export class Hud {
     const kt = el('button', 'pc-challenge pc-karate', busy ? '🥋 Ocupado...' : '🥋 Desafiar: Karatê');
     kt.disabled = !!busy;
     kt.addEventListener('click', () => { onKarate?.(); this.closePlayerCard(); });
+    const qm = el('button', 'pc-challenge pc-queimada', busy ? '🔴🔵 Ocupado...' : '🔴🔵 Chamar p/ Queimada');
+    qm.disabled = !!busy;
+    qm.addEventListener('click', () => { onQueimada?.(); this.closePlayerCard(); });
     const wave = el('button', 'pc-wave', '👋 Acenar');
     wave.addEventListener('click', () => { onWave(); this.closePlayerCard(); });
-    card.append(head, btn, kt);
+    card.append(head, btn, kt, qm);
     // chat de voz: convidar / pedir para entrar no grupo (ver voice/VoiceClient.cardAction)
     if (voice) {
       const vb = el('button', 'pc-voice', voice.label);
@@ -184,7 +187,7 @@ export class Hud {
     card.append(wave);
     card.hidden = false;
     const w = 220;
-    const h = voice ? 236 : 190;
+    const h = voice ? 282 : 236;
     card.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, sx - w / 2))}px`;
     card.style.top = `${Math.max(8, Math.min(window.innerHeight - h, sy - h))}px`;
   }
