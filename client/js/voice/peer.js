@@ -39,6 +39,9 @@ export class VoicePeer {
     const pc = new RTCPeerConnection({ iceServers: this.iceServers, bundlePolicy: 'max-bundle', rtcpMuxPolicy: 'require' });
     this.pc = pc;
     this.pendingIce = [];
+    // fila nova: promessas de uma conexão fechada no meio de uma operação nunca terminam (Chrome),
+    // e a oferta da conexão nova ficaria presa atrás delas
+    this.queue = Promise.resolve();
     pc.onicecandidate = (ev) => {
       if (pc !== this.pc) return;
       const c = ev.candidate;

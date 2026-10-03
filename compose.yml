@@ -1,5 +1,6 @@
 # Produção na VPS: docker compose up -d --build   (ver docs/DEPLOY.md)
 # Acesso pelo IP externo: http://<IP-DA-VPS>:${GAME_PORT:-3000}
+# Variáveis no .env (o scripts/deploy.sh escreve): GAME_PORT, TURN_SECRET, TURN_HOST, TURN_EXTERNAL_IP
 name: niltonpark
 
 services:
@@ -12,6 +13,9 @@ services:
       - "${GAME_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
+      # chat de voz: o jogo entrega aos navegadores credenciais temporárias deste TURN
+      TURN_URLS: "turn:${TURN_HOST:-127.0.0.1}:3478?transport=udp,turn:${TURN_HOST:-127.0.0.1}:3478?transport=tcp"
+      TURN_SECRET: "${TURN_SECRET:-}"
     # a VPS roda outros sistemas: o jogo não pode roubar recursos deles
     mem_limit: 256m
     cpus: 1.0
@@ -24,3 +28,68 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # Servidor TURN do chat de voz (coturn): só é usado quando dois jogadores não conseguem
+  # se ligar direto (NAT de operadora 4G, rede corporativa). A voz em si não passa pelo jogo.
+  # Portas publicadas pelo Docker só em IPv4 e numa faixa pequena: cada porta publicada vira
+  # um processo docker-proxy na VPS (ver docs/DEPLOY.md → "TURN").
+  # Nunca repassa para redes internas (containers, MySQL etc. da VPS): --denied-peer-ip.
+  turn:
+    image: coturn/coturn:4.18-alpine
+    container_name: niltonpark-turn
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:3478:3478/udp"
+      - "0.0.0.0:3478:3478/tcp"
+      - "0.0.0.0:${TURN_MIN_PORT:-49160}-${TURN_MAX_PORT:-49199}:${TURN_MIN_PORT:-49160}-${TURN_MAX_PORT:-49199}/udp"
+    # sh -c: descobre o IP do próprio container — quando os DOIS lados usam o relay, o coturn manda
+    # para o próprio endereço (traduzido para o IP interno) e isso precisa ser liberado.
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        exec turnserver
+        -n
+        --log-file=stdout
+        --simple-log
+        --listening-port=3478
+        --external-ip=${TURN_EXTERNAL_IP:-127.0.0.1}
+        --min-port=${TURN_MIN_PORT:-49160}
+        --max-port=${TURN_MAX_PORT:-49199}
+        --realm=niltonpark
+        --use-auth-secret
+        --static-auth-secret=${TURN_SECRET:-trocar}
+        --fingerprint
+        --no-tls
+        --no-tcp-relay
+        --no-multicast-peers
+        --no-rfc5780
+        --no-software-attribute
+        --user-quota=${TURN_USER_QUOTA:-24}
+        --total-quota=${TURN_TOTAL_QUOTA:-40}
+        --max-bps=128000
+        --stale-nonce=600
+        --denied-peer-ip=0.0.0.0-0.255.255.255
+        --denied-peer-ip=10.0.0.0-10.255.255.255
+        --denied-peer-ip=100.64.0.0-100.127.255.255
+        --denied-peer-ip=127.0.0.0-127.255.255.255
+        --denied-peer-ip=169.254.0.0-169.254.255.255
+        --denied-peer-ip=172.16.0.0-172.31.255.255
+        --denied-peer-ip=192.0.0.0-192.0.0.255
+        --denied-peer-ip=192.168.0.0-192.168.255.255
+        --denied-peer-ip=198.18.0.0-198.19.255.255
+        --denied-peer-ip=224.0.0.0-255.255.255.255
+        --allowed-peer-ip=$$(hostname -i | cut -d' ' -f1)
+    mem_limit: 96m
+    cpus: 0.5
+    pids_limit: 64
+    read_only: true
+    tmpfs:
+      - /var/lib/coturn
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
