@@ -41,6 +41,9 @@ export const MAP = {
   // Prédio do Dojo de Karatê na fileira de casas: clicar mostra as lutas ao vivo e leva
   // para a plateia. `door` = onde o espectador "está" na praça (e reaparece ao sair).
   dojo: { id: 'dojo', x: 1230, y: 100, w: 230, h: 170, door: { x: 1345, y: 318 } },
+  // Ginásio da Queimada (do lado esquerdo, acima do lago): clicar lista as partidas e deixa entrar
+  // ou criar uma. `door` = onde quem está jogando "está" na praça (e reaparece ao sair).
+  gym: { id: 'gym', x: 240, y: 96, w: 260, h: 174, door: { x: 370, y: 322 } },
 
   fountain: { id: 'fountain', x: 1000, y: 640, r: 92, interact: { x: 1000, y: 760 } },
 

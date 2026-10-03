@@ -12,6 +12,7 @@ import { GG } from '../shared/golagol.js';
 import { ARENA } from '../shared/arena.js';
 import { GolAGol } from './minigames/GolAGol.js';
 import { KarateFight } from './minigames/Karate.js';
+import { QueimadaMatch } from './minigames/Queimada.js';
 import { VoiceHub } from './VoiceHub.js';
 import { sanitizeNick, sanitizeChat, sanitizeLook } from '../shared/validation.js';
 
@@ -37,6 +38,9 @@ export class Room {
     this.fights = new Map(); // lutas de Karatê (várias ao mesmo tempo: cada uma no seu dojo)
     this.fightOf = new Map(); // playerId -> luta
     this.nextFightId = 1;
+    this.qms = new Map(); // partidas de Queimada (quadras do Ginásio, várias ao mesmo tempo)
+    this.qmOf = new Map(); // playerId -> partida de Queimada (na quadra, no cemitério ou na fila)
+    this.nextQmId = 1;
     this.voice = new VoiceHub(this, voice); // chat de voz por grupos (server/VoiceHub.js)
   }
 
@@ -78,6 +82,7 @@ export class Room {
       ball: this.ballPublic(),
       match: this.match ? this.match.publicInfo() : null,
       fights: [...this.fights.values()].map((f) => f.publicInfo()),
+      qms: [...this.qms.values()].map((m) => m.publicInfo()),
     }));
     this.broadcast({ t: MSG.JOIN, player: publicPlayer(p, 0) }, p.id);
     return { player: p };
@@ -90,6 +95,7 @@ export class Room {
     this.leaveSeat(p);
     if (this.match?.has(id)) this.match.forfeit(id);
     this.fightOf.get(id)?.forfeit(id);
+    this.qmLeave(id, 'quiet');
     this.voice.removePlayer(id);
     for (const [key, inv] of this.invites) {
       if (inv.from === id || inv.to === id) {
@@ -162,6 +168,19 @@ export class Room {
       case MSG.KT_CHEER:
         this.watching.get(id)?.cheer(p, msg);
         break;
+      case MSG.QM_CREATE:
+        this.qmCreate(p, msg);
+        break;
+      case MSG.QM_JOIN:
+        this.qmJoin(p, msg.id);
+        break;
+      case MSG.QM_LEAVE:
+        this.qmLeave(id, 'left');
+        break;
+      case MSG.QM_INPUT:
+      case MSG.QM_ACT:
+        this.qmOf.get(id)?.handle(p, msg); // quem não está na partida: ignorado
+        break;
       case MSG.CHAT:
         this.onChat(p, msg.text);
         break;
@@ -181,8 +200,13 @@ export class Room {
 
   // ---------- desafios (Gol a Gol / Karatê) ----------
 
-  // jogando, lutando ou na plateia do dojo (fora da praça)
+  // jogando, lutando, na plateia do dojo ou numa quadra de Queimada (fora da praça)
   isBusy(id) {
+    return !!this.match?.has(id) || this.fightOf.has(id) || this.watching.has(id) || this.qmOf.has(id);
+  }
+
+  // ocupado com algo que não seja uma partida de Queimada (quem está numa quadra pode convidar)
+  busyBeyondQm(id) {
     return !!this.match?.has(id) || this.fightOf.has(id) || this.watching.has(id);
   }
 
@@ -191,18 +215,22 @@ export class Room {
     const game = GAMES.includes(msg.game) ? msg.game : 'golagol';
     const status = (s, extra = {}) => this.sendTo(p, { t: MSG.CH_STATUS, status: s, with: msg.to, nick: target?.nick, game, ...extra });
     if (!target || target.id === p.id) return status('invalid');
-    if (this.isBusy(p.id) || this.isBusy(target.id)) return status('busy');
+    // Queimada: quem já está numa quadra chama gente para a SUA partida (vários convites de uma vez)
+    const qm = game === 'queimada' ? this.qmOf.get(p.id) : null;
+    if ((game === 'queimada' ? this.busyBeyondQm(p.id) : this.isBusy(p.id)) || this.isBusy(target.id)) return status('busy');
+    if (qm?.full()) return status('full');
     const now = this.now();
-    // um convite pendente por desafiante: o novo substitui o antigo
-    for (const [key, inv] of this.invites) if (inv.from === p.id) this.invites.delete(key);
-    // se o alvo já tinha me desafiado, isso vira um "aceite"
+    // um convite pendente por desafiante: o novo substitui o antigo (na Queimada, só o mesmo alvo)
+    for (const [key, inv] of this.invites) if (inv.from === p.id && (game !== 'queimada' || inv.to === target.id)) this.invites.delete(key);
+    // se o alvo já tinha me desafiado para o mesmo jogo, isso vira um "aceite"
     const reverse = this.invites.get(`${target.id}>${p.id}`);
-    if (reverse) {
+    if (reverse && reverse.game === game) {
       this.onChallengeReply(p, { from: target.id, accept: true });
       return undefined;
     }
     this.invites.set(`${p.id}>${target.id}`, { from: p.id, to: target.id, at: now, rematch: !!msg.rematch, game });
-    this.sendTo(target, { t: MSG.CHALLENGE, from: p.id, nick: p.nick, rematch: !!msg.rematch, ttl: GG.INVITE_TTL_MS, game });
+    const extra = game === 'queimada' ? { match: qm?.id || 0, hard: qm?.hard ? 1 : 0, n: qm?.size() || 0 } : {};
+    this.sendTo(target, { t: MSG.CHALLENGE, from: p.id, nick: p.nick, rematch: !!msg.rematch, ttl: GG.INVITE_TTL_MS, game, ...extra });
     return status('sent');
   }
 
@@ -220,6 +248,10 @@ export class Room {
       this.sendTo(from, { t: MSG.CH_STATUS, status: 'declined', with: p.id, nick: p.nick, game });
       return;
     }
+    if (game === 'queimada') {
+      this.acceptQmInvite(from, p);
+      return;
+    }
     // alguém entrou em outra partida enquanto o convite esperava
     if (this.isBusy(from.id) || this.isBusy(p.id)) {
       for (const [a, b] of [[from, p], [p, from]]) this.sendTo(a, { t: MSG.CH_STATUS, status: 'busy', with: b.id, nick: b.nick, game });
@@ -235,6 +267,29 @@ export class Room {
     }
     if (game === 'karate') this.startFight(from, p);
     else this.startMatch(from, p);
+  }
+
+  // convite de Queimada aceito: entra na partida de quem convidou (ou os dois criam uma)
+  acceptQmInvite(from, p) {
+    const st = (a, b, status) => this.sendTo(a, { t: MSG.CH_STATUS, status, with: b.id, nick: b.nick, game: 'queimada' });
+    if (this.busyBeyondQm(from.id) || this.isBusy(p.id)) {
+      st(from, p, 'busy');
+      st(p, from, 'busy');
+      return;
+    }
+    // só limpa os convites de quem aceitou (quem convidou pode ter chamado mais gente)
+    for (const [k, i] of this.invites) if (i.from === p.id || i.to === p.id) this.invites.delete(k);
+    let qm = this.qmOf.get(from.id);
+    if (qm?.full()) {
+      st(from, p, 'full');
+      st(p, from, 'full');
+      return;
+    }
+    if (!qm) {
+      qm = this.newQm(false);
+      this.qmEnter(from, qm);
+    }
+    this.qmEnter(p, qm);
   }
 
   startMatch(a, b) {
@@ -291,6 +346,62 @@ export class Room {
     fight.watchers.clear();
   }
 
+  // ---------- Queimada (Ginásio) ----------
+
+  newQm(hard) {
+    const qm = new QueimadaMatch(this, this.nextQmId++, hard);
+    this.qms.set(qm.id, qm);
+    return qm;
+  }
+
+  qmCreate(p, msg) {
+    if (this.busyBeyondQm(p.id)) return this.sendTo(p, { t: MSG.QM_EXIT, id: 0, reason: 'busy' });
+    return this.qmEnter(p, this.newQm(!!msg.hard));
+  }
+
+  qmJoin(p, id) {
+    const qm = this.qms.get(id);
+    const refuse = (reason) => this.sendTo(p, { t: MSG.QM_EXIT, id, reason });
+    if (!qm) return refuse('gone');
+    if (this.qmOf.get(p.id) === qm) return undefined;
+    if (this.busyBeyondQm(p.id)) return refuse('busy');
+    if (qm.full()) return refuse('full');
+    return this.qmEnter(p, qm);
+  }
+
+  // entra pela porta do Ginásio: ao sair, reaparece lá
+  qmEnter(p, qm) {
+    if (qm.full()) {
+      this.sendTo(p, { t: MSG.QM_EXIT, id: qm.id, reason: 'full' });
+      if (!qm.size()) this.endQm(qm);
+      return;
+    }
+    this.unwatch(p.id, 'busy');
+    if (this.qmOf.get(p.id) !== qm) this.qmLeave(p.id, 'switch');
+    this.leaveSeat(p);
+    const door = this.map.gym.door;
+    Object.assign(p, { x: door.x, y: door.y, dir: 1, path: [], pending: null, moving: false, vx: 0, vy: 0, pose: 'queimada' });
+    this.qmOf.set(p.id, qm);
+    qm.add(p);
+  }
+
+  qmLeave(id, reason = 'left') {
+    const qm = this.qmOf.get(id);
+    if (!qm) return;
+    this.qmOf.delete(id);
+    const p = this.players.get(id);
+    if (p) p.pose = '';
+    qm.remove(id, reason);
+  }
+
+  // quadra vazia: some da lista do Ginásio
+  endQm(qm) {
+    if (this.qms.get(qm.id) !== qm) return;
+    this.qms.delete(qm.id);
+    for (const [pid, m] of this.qmOf) if (m === qm) this.qmOf.delete(pid);
+    this.broadcast({ t: MSG.QM_LIVE, id: qm.id, gone: 1 });
+  }
+
   // ---------- plateia do Dojo ----------
 
   watchFight(p, fightId) {
@@ -298,7 +409,7 @@ export class Room {
     const refuse = (reason) => this.sendTo(p, { t: MSG.KT_UNWATCH, id: fightId, reason });
     if (!fight || fight.over) return refuse('gone');
     if (this.watching.get(p.id) === fight) return undefined;
-    if (this.match?.has(p.id) || this.fightOf.has(p.id)) return refuse('busy');
+    if (this.match?.has(p.id) || this.fightOf.has(p.id) || this.qmOf.has(p.id)) return refuse('busy');
     if (fight.watchers.size >= ARENA.MAX_WATCHERS) return refuse('full');
     this.unwatch(p.id, 'switch'); // trocando de luta
     this.leaveSeat(p);
@@ -450,6 +561,7 @@ export class Room {
     if (!this.ball.hidden) this.stepBall(dt);
     this.match?.tick(dt);
     for (const f of [...this.fights.values()]) f.tick(dt);
+    for (const qm of [...this.qms.values()]) qm.tick(dt);
     if (this.invites.size) this.expireInvites();
     this.voice.tick();
   }

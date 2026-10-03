@@ -83,6 +83,20 @@ export const MSG = {
   KT_LIVE: 'kt_live', // s->todos {id, rd, wins, w:[[pid, side, seat]]} placar/plateia mudou
   KT_END: 'kt_end', // s->todos {winner, loser, reason, score}
 
+  // ---- minigame Queimada (quadras no Ginásio, ver shared/queimada.js) ----
+  // convite pelo cartão do player: CHALLENGE/CHALLENGE_REPLY/CH_STATUS com `game: 'queimada'`
+  QM_CREATE: 'qm_create', // c->s {hard} cria uma partida nova e entra
+  QM_JOIN: 'qm_join', // c->s {id} entra numa partida já existente (na quadra ou na fila)
+  QM_LEAVE: 'qm_leave', // c->s {} sai da partida (volta para a porta do Ginásio)
+  QM_INPUT: 'qm_input', // c->s {mx, my} movimento
+  QM_ACT: 'qm_act', // c->s {a: throw|grab|dodge, x?, y? (alvo do arremesso), dx?, dy? (direção da esquiva)}
+  QM_ENTER: 'qm_enter', // s->c confirmação {id, ph, hard, rd, m, target}
+  QM_EXIT: 'qm_exit', // s->c {id, reason: left|full|gone|busy}
+  QM_LIVE: 'qm_live', // s->todos {id, ph, hard, rd, m:[[pid, time, lugar, pts]]} | {id, gone:1}
+  QM_STATE: 'qm_state', // s->membros, 30x/s
+  QM_EVENT: 'qm_event', // s->membros {kind, ...}
+  QM_END: 'qm_end', // s->todos {id, winner, winnerNick, rank:[[pid, nick, pts, hits, catches, dodges]]}
+
   // ---- chat de voz por grupos (ver shared/voice.js) ----
   VC_INVITE: 'vc_invite', // c->s {to} convida para o meu grupo (cria um se eu não tiver)
   VC_REQUEST: 'vc_request', // c->s {to} pede para entrar no grupo de `to`
@@ -98,4 +112,4 @@ export const MSG = {
 };
 
 // Minigames que podem ser escolhidos num desafio (campo `game`; ausente = golagol).
-export const GAMES = ['golagol', 'karate'];
+export const GAMES = ['golagol', 'karate', 'queimada'];
