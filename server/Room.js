@@ -12,13 +12,14 @@ import { GG } from '../shared/golagol.js';
 import { ARENA } from '../shared/arena.js';
 import { GolAGol } from './minigames/GolAGol.js';
 import { KarateFight } from './minigames/Karate.js';
+import { VoiceHub } from './VoiceHub.js';
 import { sanitizeNick, sanitizeChat, sanitizeLook } from '../shared/validation.js';
 
 const ARRIVE_TOLERANCE = 40; // px: distância máxima para executar a interação pendente
 const FX_COOLDOWN_MS = 300;
 
 export class Room {
-  constructor({ map = MAP, now = () => Date.now(), random = Math.random } = {}) {
+  constructor({ map = MAP, now = () => Date.now(), random = Math.random, voice = {} } = {}) {
     this.map = map;
     this.now = now;
     this.random = random;
@@ -36,6 +37,7 @@ export class Room {
     this.fights = new Map(); // lutas de Karatê (várias ao mesmo tempo: cada uma no seu dojo)
     this.fightOf = new Map(); // playerId -> luta
     this.nextFightId = 1;
+    this.voice = new VoiceHub(this, voice); // chat de voz por grupos (server/VoiceHub.js)
   }
 
   // ---------- ciclo de vida de players ----------
@@ -70,14 +72,14 @@ export class Room {
       v: PROTOCOL_VERSION,
       you: p.id,
       map: this.map.id,
-      players: [...this.players.values()].map(publicPlayer),
+      players: [...this.players.values()].map((pl) => publicPlayer(pl, this.voice.tagOf(pl.id))),
       lamps: this.lamps,
       score: this.score,
       ball: this.ballPublic(),
       match: this.match ? this.match.publicInfo() : null,
       fights: [...this.fights.values()].map((f) => f.publicInfo()),
     }));
-    this.broadcast({ t: MSG.JOIN, player: publicPlayer(p) }, p.id);
+    this.broadcast({ t: MSG.JOIN, player: publicPlayer(p, 0) }, p.id);
     return { player: p };
   }
 
@@ -88,6 +90,7 @@ export class Room {
     this.leaveSeat(p);
     if (this.match?.has(id)) this.match.forfeit(id);
     this.fightOf.get(id)?.forfeit(id);
+    this.voice.removePlayer(id);
     for (const [key, inv] of this.invites) {
       if (inv.from === id || inv.to === id) {
         this.invites.delete(key);
@@ -125,6 +128,11 @@ export class Room {
   handle(id, msg) {
     const p = this.players.get(id);
     if (!p || !msg || typeof msg.t !== 'string') return;
+    // voz funciona em qualquer lugar (praça, Gol a Gol, dojo)
+    if (msg.t.startsWith('vc_')) {
+      this.voice.handle(p, msg);
+      return;
+    }
     const inMatch = !!this.match?.has(id);
     const busy = this.isBusy(id); // jogando Gol a Gol ou lutando no dojo
     switch (msg.t) {
@@ -443,6 +451,7 @@ export class Room {
     this.match?.tick(dt);
     for (const f of [...this.fights.values()]) f.tick(dt);
     if (this.invites.size) this.expireInvites();
+    this.voice.tick();
   }
 
   stepPlayer(p, dt) {
@@ -563,8 +572,9 @@ export class Room {
   }
 }
 
-function publicPlayer(p) {
-  return { id: p.id, nick: p.nick, look: p.look, x: Math.round(p.x), y: Math.round(p.y), dir: p.dir, pose: p.pose };
+// vg = id do grupo de voz (0 = nenhum)
+function publicPlayer(p, vg) {
+  return { id: p.id, nick: p.nick, look: p.look, x: Math.round(p.x), y: Math.round(p.y), dir: p.dir, pose: p.pose, vg };
 }
 
 function isNum(v) {

@@ -89,7 +89,34 @@ Latência real até a VPS variou 15–195 ms (jitter de Wi-Fi). Atraso fixo de i
 `AdaptiveDelay` ajusta por conexão. Predição do Karatê considera o RTT. Queda de rede/deploy reconecta sozinho
 (recarrega e refaz o login com o perfil salvo) — resolve o essencial da T-101 sem sessão no servidor.
 
-**D-021 — Plateia do Dojo: espectador entra na mesma instância da luta, mas só recebe.** (2026-10-03)
+**D-021 — Voz por WebRTC em malha (P2P), sem SFU; grupos de até 8.** (2026-10-03)
+Um SFU (mediasoup/LiveKit) passaria todo o áudio pelo container de 256 MB/1 CPU numa VPS compartilhada. Em malha o
+servidor só sinaliza; cada um envia 1 fluxo Opus por membro (8 pessoas → 7 × ~32 kbps ≈ 220 kbps de subida, ok no 4G).
+Acima de ~8 a malha pesa no celular → limite `VOICE.MAX_GROUP = 8`. Se um dia precisar de salas grandes: SFU.
+
+**D-022 — Só o lado de menor id oferece.** (2026-10-03)
+Evita "glare" (ofertas cruzadas) sem a complexidade da "perfect negotiation": o outro lado só responde e pede
+`restart`. Na queda: reinício de ICE 2× → recria do zero (`reset`) → vigia de 10 s. Testado no E2E (inclusive só-relay).
+
+**D-023 — Áudio remoto tocado em `<audio>`, não em WebAudio.** (2026-10-03)
+No Chrome, áudio remoto que sai só pelo WebAudio escapa do cancelamento de eco (eco em quem usa caixa de som).
+Volume por pessoa via `el.volume` (0–100%; no iOS o volume é fixo). Indicador de fala vem do RTP (`audioLevel`),
+sem um analisador por pessoa. O microfone sim passa por WebAudio (volume, porteira, ativação por voz).
+
+**D-024 — TURN próprio (coturn) com credenciais temporárias; portas pelo Docker.** (2026-10-03)
+Operadoras 4G usam NAT que impede P2P direto → sem TURN uma parte das conexões falharia. coturn em container
+(`niltonpark-turn`, ~10 MB RAM) com `use-auth-secret`: o jogo gera usuário/senha de 12 h por player (segredo só na VPS).
+Bloqueia relay para redes internas (MySQL/containers da VPS) e TCP relay; libera só o IP do próprio container
+(relay↔relay). Sem `sudo` na VPS (ufw bloqueia portas do host) as portas saem pelo Docker: só IPv4 e faixa de 40
+portas UDP (cada porta = um `docker-proxy`). Com acesso root dá para trocar por `network_mode: host` (ver DEPLOY).
+Achado no E2E só-relay: Chrome aloca 1 relay por interface de rede e mantém os antigos durante o reinício de ICE →
+cota por usuário 24 (não 10).
+
+**D-025 — Microfone exige HTTPS → domínio.** (2026-10-03)
+`getUserMedia` só funciona em contexto seguro; em `http://IP:3000` dá para entrar no grupo e **só ouvir** (o painel
+avisa). Para falar em produção: domínio `park.magmacursosltda.com.br` com HTTPS (nginx da VPS + Let's Encrypt) — no ar.
+
+**D-026 — Plateia do Dojo: espectador entra na mesma instância da luta, mas só recebe.** (2026-10-03)
 Opções: (a) transmitir a luta para a praça (todos recebem estado), (b) plateia dentro da luta. Escolhida (b): banda só
 para quem quer assistir, o espectador vira parte da cena (sentado na plateia, visto pelos lutadores) e o isolamento é
 natural — comandos de luta são aceitos só de `fightOf`. Torcida limitada (1 a cada 0,7 s, 24 lugares) e desenhada fora

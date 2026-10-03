@@ -69,10 +69,14 @@ export class WatchUi {
     this.buttons = [this.sideA, this.sideB, ...reacts.children];
 
     const nav = el('div', 'kw-nav');
-    this.nextBtn = el('button', 'kw-next', '⇄ Outra luta');
+    // rótulo curto no celular (o topo esquerdo já tem 4 ícones: ☰ 💬 👥 🎙️)
+    const label = (icon, long, short) => [el('span', '', icon), el('span', 'kw-long', ` ${long}`), el('span', 'kw-short', short ? ` ${short}` : '')];
+    this.nextBtn = el('button', 'kw-next');
+    this.nextBtn.append(...label('⇄', 'Outra luta', ''));
     this.nextBtn.title = 'Assistir outra luta (N)';
     this.nextBtn.addEventListener('click', () => this.nextFight());
-    const exit = el('button', 'kw-exit', '🚪 Sair do dojo');
+    const exit = el('button', 'kw-exit');
+    exit.append(...label('🚪', 'Sair do dojo', 'Sair'));
     exit.title = 'Voltar para a praça (Esc)';
     exit.addEventListener('click', () => this.kt.leaveWatch());
     nav.append(this.nextBtn, exit);

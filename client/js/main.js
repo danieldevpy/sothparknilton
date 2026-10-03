@@ -97,7 +97,9 @@ const hud = new Hud({
 const canvas = $('#game');
 const game = new Game(canvas, hud);
 let started = false;
-if (location.hostname === 'localhost') window.__game = game; // debug no console
+// debug no console (e nos testes E2E): localhost ou ?debug=1
+const DEBUG = location.hostname === 'localhost' || new URLSearchParams(location.search).has('debug');
+if (DEBUG) window.__game = game;
 
 $('#login-form').addEventListener('submit', (ev) => {
   ev.preventDefault();
@@ -157,7 +159,9 @@ function start() {
   ping();
   setInterval(ping, 2000);
   const mobileUi = IS_MOBILE ? setupMobile(game, hud) : null;
-  if (location.hostname === 'localhost') window.__mobile = mobileUi; // debug
+  game.voice.ui.mount(); // depois do HUD mobile (o ícone 🎙️ vai na barra do topo)
+  if (DEBUG) window.__voice = game.voice;
+  if (DEBUG) window.__mobile = mobileUi;
   const loop = () => {
     game.frame();
     mobileUi?.update();

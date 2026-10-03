@@ -73,6 +73,9 @@ body.kt-watch #kt-help, body.kt-watch #kt-touch { display: none !important; }
 }
 .kw-nav button[hidden] { display: none; }
 .kw-exit { background: var(--yellow) !important; }
+.kw-short { display: none; }
+body.mobile .kw-long { display: none; }
+body.mobile .kw-short { display: inline; }
 
 /* ---------- painel "lutas ao vivo" (clicar no prédio do Dojo) ---------- */
 #dojo-panel {
@@ -134,8 +137,9 @@ body.mobile .kw-caster { top: calc(146px + var(--sat)); font-size: 13px; }
 body.mobile .kw-nav { top: calc(10px + var(--sat)); right: calc(10px + var(--sar)); flex-direction: row; }
 body.mobile .kw-nav button {
   background: var(--m-glass) !important; color: #fff; border: 2px solid var(--m-glass-border); border-radius: 15px;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, .25); padding: 0 12px; height: 48px; font-size: 15px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .25); padding: 0 10px; height: 48px; font-size: 15px;
 }
+body.mobile .kw-nav { gap: 5px; }
 body.mobile .kw-bar { bottom: calc(12px + var(--sab)); }
 body.mobile .kw-bar kbd { display: none; }
 body.mobile .kw-r { width: 56px; height: 56px; font-size: 26px; }

@@ -27,8 +27,10 @@ node scripts/karate-balance.js 40        # estilos de IA lutando entre si (equil
 node scripts/fanbot.js 4                 # 4 bots de torcida: entram na plateia do Dojo quando há luta
 ./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
 node scripts/netcheck.js ws://204.157.124.113:3000/ws   # mede ping/jitter/travadas contra um servidor
+node scripts/voice-e2e.mjs               # E2E do chat de voz (Chrome headless + mic falso; precisa `npm i --no-save puppeteer`)
+ssh -t -p 45392 daniel@204.157.124.113 'sudo bash ~/servers/niltonpark/scripts/setup-domain.sh'   # domínio + HTTPS (1 vez)
 ```
-Produção: **http://204.157.124.113:3000** (VPS, Docker, só IP externo) — operação em `docs/DEPLOY.md`.
+Produção: **https://park.magmacursosltda.com.br** (HTTPS: microfone) e http://204.157.124.113:3000 (VPS, Docker) — operação em `docs/DEPLOY.md`.
 Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 
 ## Mapa do código
@@ -53,7 +55,11 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/render/*` | Desenho procedural: `paint.js` (helpers), `character.js`, `world.js`, `bubbles.js`, `fx.js` |
 | `client/js/hud.js` / `input.js` / `audio.js` | Interface DOM, controles, sons sintetizados |
 | `client/js/jitter.js` | Atraso de interpolação adaptativo ao jitter da rede (praça, Gol a Gol, Karatê) |
-| `Dockerfile` / `compose.yml` / `scripts/deploy.sh` | Produção na VPS (ver `docs/DEPLOY.md`) |
+| `Dockerfile` / `compose.yml` / `scripts/deploy.sh` | Produção na VPS: jogo + TURN do chat de voz (coturn) — ver `docs/DEPLOY.md` |
+| `server/VoiceHub.js` | Chat de voz: grupos, convites/pedidos para entrar, mudo, repasse da sinalização WebRTC, credenciais TURN (`room.voice`) |
+| `shared/voice.js` | Constantes (`VOICE`), textos de status, validação da sinalização, ajuste do Opus no SDP |
+| `client/js/voice/` | `VoiceClient` (controle), `peer.js` (RTCPeerConnection), `mic.js` (microfone + WebAudio), `settings.js`, `ui.js` (painel, convites, configurações) + `client/voice.css` |
+| `deploy/` + `scripts/setup-domain.sh` | Site do nginx do domínio (HTTPS) e instalador com certbot (rodar com sudo na VPS) |
 | `client/js/mobile.js` | Interface mobile (estilo Roblox): detecção, joystick, botões de ação, painéis; ativa `body.mobile` |
 | `client/assets/generated/` | Assets gerados por IA (Kairogen) — ver `docs/ASSETS.md` |
 | `tests/` | Testes `node:test` |
@@ -82,12 +88,18 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 10. Mexeu em números do Gol a Gol (`GG` em `shared/golagol.js`)? Rode `scripts/golagol-balance.js` (rand e skill) e registre em DECISIONS.
 11. Novo minigame: mesma interface do `GolAGol` (`has/handle/tick/forfeit/publicInfo`), regras no servidor, física/constantes em `shared/`.
 12. Mexeu em `KT`/`MOVES` (`shared/karate.js`)? Rode `scripts/karate-balance.js` — nenhum estilo de um golpe só deve vencer o `mixed` com folga — e registre em DECISIONS.
-12. **Mobile**: toda UI nova precisa funcionar em `body.mobile` (retrato e paisagem) — teste com `?mobile=1` e viewport 375×812 / 812×375. Controles de toque novos vão em `mobile.js` (botões em `#m-actions` com `data-show`).
+13. **Voz**: o áudio nunca passa pelo servidor do jogo (WebRTC P2P/TURN). Regra de grupo nova vai em `server/VoiceHub.js` + `tests/voice.test.js`; mexeu no cliente de voz, rode `scripts/voice-e2e.mjs`. O microfone só pode ficar aberto no grupo, testando ou com convite esperando.
+14. **Mobile**: toda UI nova precisa funcionar em `body.mobile` (retrato e paisagem) — teste com `?mobile=1` e viewport 375×812 / 812×375. Controles de toque novos vão em `mobile.js` (botões em `#m-actions` com `data-show`).
 
 ## Estado atual
-**Plateia do Dojo (branch `feature/arena`, 2026-10-03)**: o 3º prédio da praça é o **Dojo**: com luta rolando ele
+**v0.6.0 — Plateia do Dojo (2026-10-03)**: o 3º prédio da praça é o **Dojo**: com luta rolando ele
 acende (AO VIVO) e o clique lista as lutas (`Nilton × Daniel — 👀 Assistir`); o espectador senta na plateia do dojo,
 torce (placas, reações, coro, ola) e ouve o locutor, **sem poder interferir**. Notificação pequena quando uma luta começa.
+
+**v0.5.0 (2026-10-03)**: **chat de voz por grupos** — clique num player → 🎙️ Chamar para conversar por voz (ou
+🎧 Pedir para entrar, se ele já estiver num grupo). WebRTC em malha (até 8), TURN próprio (coturn), configurações de
+áudio completas (dispositivos, volumes, ativação por voz / voz aberta / apertar para falar, eco/ruído/ganho, qualidade).
+Microfone exige HTTPS → domínio `park.magmacursosltda.com.br`. Ver GAME_DESIGN e ARCHITECTURE.
 
 **Karatê (branch `feature/karate`, 2026-10-01)**: minigame **Karatê 1x1** num **dojo separado** da praça
 (clique num player → 🥋 Desafiar: Karatê). Soco fraco/forte, chute fraco/forte com vantagens próprias, defesa

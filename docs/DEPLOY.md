@@ -1,8 +1,9 @@
 # Deploy (produção)
 
-Produção roda na **VPS** em Docker, acessada só pelo **IP externo** (sem domínio/HTTPS):
+Produção roda na **VPS** em Docker:
 
-> 🎮 **http://204.157.124.113:3000**
+> 🎮 **https://park.magmacursosltda.com.br** (com HTTPS: chat de voz completo)
+> 🎮 http://204.157.124.113:3000 (pelo IP: tudo funciona, mas a voz é só para ouvir)
 
 | Item | Valor |
 |---|---|
@@ -11,14 +12,15 @@ Produção roda na **VPS** em Docker, acessada só pelo **IP externo** (sem dom�
 | Container | `niltonpark` (imagem `niltonpark:latest`, `node:22-alpine`), `restart: unless-stopped` |
 | Porta | `3000` no host → `3000` no container (a 80/443 da VPS são de outros sistemas — não mexer) |
 | Limites | 256 MB de RAM, 1 CPU, 100 processos, sistema de arquivos só-leitura, logs 3×10 MB |
-| Saúde | `GET /health` → `{ok, version, players, fights, match, uptime}` (também usado pelo HEALTHCHECK) |
+| Saúde | `GET /health` → `{ok, version, players, fights, match, voice:{groups,inVoice}, uptime}` (também usado pelo HEALTHCHECK) |
+| Voz | container `niltonpark-turn` (coturn) — ver "TURN do chat de voz" |
 
 ## Publicar uma versão nova (de uma vez)
 ```bash
 ./scripts/deploy.sh
 ```
-O script: roda `npm test` → envia o código por SSH (tar) → `docker compose up -d --build` → confere o `/health`
-pelo IP externo. Quem estiver jogando cai por ~2 s e **reconecta sozinho** (mesmo nick/visual).
+O script: roda `npm test` → envia o código por SSH (tar) → escreve o `.env` (porta, segredo e endereço do TURN) →
+`docker compose up -d --build` (jogo + TURN) → confere o `/health` pelo IP externo e pelo `https://` do domínio. Quem estiver jogando cai por ~2 s e **reconecta sozinho** (mesmo nick/visual).
 Variáveis opcionais: `VPS_HOST`, `VPS_PORT`, `VPS_USER`, `VPS_DIR`, `GAME_PORT`.
 
 ## Operação na VPS
@@ -61,7 +63,40 @@ Medições de 2026-10-02:
 Simulação (`AdaptiveDelay` vs. atraso fixo, % de quadros com buffer vazio): karatê em 4G ruim 13,7% → 3,1%;
 praça em 4G ruim 4,6% → 1,1%; Wi-Fi ruim 25,9% → 12% (o resto é coberto pela extrapolação curta).
 
-## Se precisar de domínio/HTTPS no futuro
-Apontar um domínio para a VPS e adicionar um `server {}` no nginx existente fazendo proxy para `127.0.0.1:3000`
-com `proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade";` (o cliente já usa `wss://`
-automaticamente quando a página é https). Aí dá para trocar `ports` por `127.0.0.1:3000:3000` no `compose.yml`.
+## Domínio + HTTPS (obrigatório para o microfone do chat de voz)
+> 🔒 **https://park.magmacursosltda.com.br** — no ar desde 2026-10-03 (Let's Encrypt, renovação automática pelo certbot da VPS)
+
+O navegador só libera o microfone em HTTPS. Pelo `http://IP:3000` o chat de voz funciona **só para ouvir**.
+O nginx da VPS (portas 80/443) é compartilhado com outros sistemas, então o domínio entra como **mais um site**,
+igual aos outros (`sites-available` + symlink + `certbot --nginx`). Precisa de `sudo` (uma vez):
+```bash
+./scripts/deploy.sh                                   # envia o código + deploy/ + scripts/setup-domain.sh
+ssh -t -p 45392 daniel@204.157.124.113 'sudo bash ~/servers/niltonpark/scripts/setup-domain.sh'
+```
+O `setup-domain.sh`: confere se o DNS aponta para a VPS e se o jogo responde em `127.0.0.1:3000` → copia
+`deploy/park.magmacursosltda.com.br.conf` para `/etc/nginx/sites-available/` + symlink → `nginx -t` (se falhar,
+**desfaz** e sai sem recarregar) → `reload` → `certbot --nginx -d park.magmacursosltda.com.br --redirect` → confere
+`https://.../health`. A renovação do certificado já é automática (timer do certbot da VPS).
+O site repassa o WebSocket (`Upgrade`/`Connection`) e o IP real (`X-Real-IP`) — o jogo só confia nesse cabeçalho
+quando a conexão vem de endereço privado (o proxy local), então o limite de conexões por IP continua valendo.
+
+## TURN do chat de voz (coturn)
+Container `niltonpark-turn` (`coturn/coturn:4.18-alpine`, ~10 MB de RAM, 96 MB de limite) no mesmo `compose.yml`.
+Só é usado quando dois jogadores não conseguem se ligar direto (NAT de operadora 4G, rede de empresa).
+| Item | Valor |
+|---|---|
+| Portas | `3478/udp` e `3478/tcp` (sinalização TURN) + `49160–49199/udp` (relay), só IPv4, publicadas pelo Docker |
+| Credenciais | temporárias (12 h), geradas pelo jogo com `TURN_SECRET` (`use-auth-secret`). O segredo é criado uma vez na VPS (`~/servers/niltonpark/.turn-secret`, `chmod 600`) e nunca sai de lá |
+| Cotas | 24 alocações por jogador, 40 no total (= portas de relay), 128 kB/s por sessão |
+| Segurança | sem relay TCP; relay proibido para redes internas (127/8, 10/8, 172.16/12, 192.168/16, 100.64/10...) → não alcança MySQL/containers da VPS; liberado só o IP do próprio container (relay↔relay) |
+
+Por que as portas saem pelo Docker e não `network_mode: host`: o ufw da VPS bloqueia portas do host e mexer nele
+exige `sudo`. Cada porta publicada vira um processo `docker-proxy` (~3,6 MB RSS, boa parte compartilhada) — por isso
+a faixa é de 40 portas. **Com root**, o melhor é: `sudo ufw allow 3478 && sudo ufw allow 49160:49999/udp`, trocar o
+serviço para `network_mode: host` (tirar `ports:`) e aumentar `TURN_MAX_PORT`/`TURN_TOTAL_QUOTA` no `.env`.
+
+Testar o TURN de fora (força o Chrome a usar só relay; precisa de `npm i --no-save puppeteer`):
+```bash
+RELAY=1 QUICK=1 TURN_URLS="turn:204.157.124.113:3478?transport=udp" TURN_SECRET=<segredo da VPS> node scripts/voice-e2e.mjs
+```
+Logs: `docker logs --tail 50 niltonpark-turn` (erros de credencial aparecem como `credentials ... are wrong`).

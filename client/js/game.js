@@ -14,6 +14,7 @@ import { play } from './audio.js';
 import { GolAGolClient } from './minigames/golagol.js';
 import { ArenaClient } from './minigames/arena.js';
 import { KarateClient } from './minigames/karate.js';
+import { VoiceClient } from './voice/VoiceClient.js';
 
 const BUF_MAX = 12;
 
@@ -37,6 +38,7 @@ export class Game {
     this.arena = new ArenaClient(this, hud); // prédio do Dojo: lutas ao vivo + plateia (recebe msgs via kt)
     this.gg = new GolAGolClient(this, hud);
     this.kt = new KarateClient(this, hud);
+    this.voice = new VoiceClient(this, hud); // chat de voz por grupos (voice/)
     // atraso de interpolação da praça se adapta ao jitter da rede (ver jitter.js)
     this.snapDelay = new AdaptiveDelay({ interval: 1000 / SNAPSHOT_HZ, min: INTERP_DELAY_MS, max: 320 });
     this.rtt = null;
@@ -58,6 +60,7 @@ export class Game {
 
   onMessage(msg) {
     const now = performance.now();
+    if (this.voice.onMessage(msg)) return;
     if (this.kt.onMessage(msg, now)) return;
     if (this.gg.onMessage(msg, now)) return;
     switch (msg.t) {
@@ -143,6 +146,7 @@ export class Game {
       id: p.id,
       nick: p.nick,
       look: p.look,
+      vg: p.vg || 0, // grupo de voz (0 = nenhum)
       buf: [{ at: now, x: p.x, y: p.y, dir: p.dir, moving: 0, pose: p.pose }],
       r: { x: p.x, y: p.y, dir: p.dir, moving: false, pose: p.pose },
       phase: 0,
@@ -225,6 +229,7 @@ export class Game {
         onChallenge: () => this.gg.challenge(p.id),
         onKarate: () => this.kt.challenge(p.id),
         onWave: () => this.emote('wave'),
+        voice: this.voice.cardAction(p),
       });
       play('click');
       return;
@@ -263,7 +268,7 @@ export class Game {
     }
     if (best) {
       const playing = this.gg.inMatch(best.id);
-      return { id: 'player', pid: best.id, label: playing ? `${best.nick} — jogando Gol a Gol` : `${best.nick} — clique para desafiar ⚽🥋` };
+      return { id: 'player', pid: best.id, label: playing ? `${best.nick} — jogando Gol a Gol` : `${best.nick} — clique para desafiar ⚽🥋 ou chamar para a voz 🎙️` };
     }
     for (const d of duckPositions(t)) {
       if (Math.hypot(wx - d.x, wy - (d.y - 10)) < 24) return { id: 'duck', label: 'Pato — quack!', x: Math.round(d.x), y: Math.round(d.y) };
@@ -448,7 +453,7 @@ export class Game {
     this.gg.drawOverlay(ctx, now);
     this.arena.drawOverlay(ctx, now);
     this.fx.draw(ctx, now);
-    for (const p of this.players.values()) if (!this.kt.hidden(p.id)) this.drawNick(p);
+    for (const p of this.players.values()) if (!this.kt.hidden(p.id)) this.drawNick(p, now);
 
     // camada de tela
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -489,15 +494,37 @@ export class Game {
     this.shakeAt = now;
   }
 
-  drawNick(p) {
+  drawNick(p, now) {
     const { ctx } = this;
     const y = p.r.y + headTop(p.r.pose) - 14;
+    // 🎧 = está em algum grupo de voz (dá para pedir para entrar)
+    const label = p.vg ? `🎧 ${p.nick}` : p.nick;
     ctx.font = `700 13px ${FONT}`;
-    const w = ctx.measureText(p.nick).width + 14;
+    const w = ctx.measureText(label).width + 14;
+    const badge = this.voice.badge(p.id); // só membros do MEU grupo: falando / mudo
     roundRect(ctx, p.r.x - w / 2, y - 10, w, 20, 8);
-    ctx.fillStyle = 'rgba(20,20,30,0.55)';
+    ctx.fillStyle = badge === 'speak' ? 'rgba(20,120,60,0.85)' : 'rgba(20,20,30,0.55)';
     ctx.fill();
-    outlinedText(ctx, p.nick, p.r.x, y, { size: 13, fill: p.id === this.me ? '#ffe14d' : '#ffffff', lw: 3 });
+    if (badge === 'speak') {
+      // ondas de som dos dois lados do nome
+      const k = (now / 260) % 1;
+      ctx.save();
+      ctx.strokeStyle = '#7dffa8';
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 2; i++) {
+        const r = 6 + ((k + i * 0.5) % 1) * 9;
+        ctx.globalAlpha = 1 - ((k + i * 0.5) % 1);
+        ctx.lineWidth = 2.5;
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(p.r.x + side * (w / 2 + 1), y, r, side < 0 ? Math.PI * 0.72 : -Math.PI * 0.28, side < 0 ? Math.PI * 1.28 : Math.PI * 0.28);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+    outlinedText(ctx, label, p.r.x, y, { size: 13, fill: p.id === this.me ? '#ffe14d' : '#ffffff', lw: 3 });
+    if (badge === 'muted') outlinedText(ctx, '🔇', p.r.x + w / 2 + 11, y, { size: 13, fill: '#ffffff', lw: 3 });
   }
 
   drawSnow(now) {

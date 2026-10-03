@@ -82,6 +82,19 @@ export const MSG = {
   KT_CHEER: 'kt_cheer', // c->s {r, side?} | s->lutadores + plateia {by, r, side}
   KT_LIVE: 'kt_live', // s->todos {id, rd, wins, w:[[pid, side, seat]]} placar/plateia mudou
   KT_END: 'kt_end', // s->todos {winner, loser, reason, score}
+
+  // ---- chat de voz por grupos (ver shared/voice.js) ----
+  VC_INVITE: 'vc_invite', // c->s {to} convida para o meu grupo (cria um se eu não tiver)
+  VC_REQUEST: 'vc_request', // c->s {to} pede para entrar no grupo de `to`
+  VC_REPLY: 'vc_reply', // c->s {from, accept} responde convite/pedido
+  VC_LEAVE: 'vc_leave', // c->s {} sai do grupo
+  VC_KICK: 'vc_kick', // c->s {id} dono remove alguém
+  VC_MUTE: 'vc_mute', // c->s {m, d} microfone mudo / áudio desligado
+  VC_SIGNAL: 'vc_signal', // c->s {to, d} | s->c {from, d} sinalização WebRTC (só dentro do grupo)
+  VC_ASK: 'vc_ask', // s->c {from, nick, kind:'invite'|'request', ttl, size}
+  VC_STATUS: 'vc_status', // s->c {status, with, nick}
+  VC_GROUP: 'vc_group', // s->membros {g:{id,owner,members:[{id,m,d}]}|null, ice?, reason?}
+  VC_TAG: 'vc_tag', // s->todos {id, g} player entrou/saiu de um grupo de voz (g=0: nenhum)
 };
 
 // Minigames que podem ser escolhidos num desafio (campo `game`; ausente = golagol).

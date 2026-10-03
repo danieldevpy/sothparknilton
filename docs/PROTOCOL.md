@@ -21,12 +21,19 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 | `kt_watch` | `id` (luta) | Entrar na **plateia** de uma luta (ou trocar de luta). Recusa com `kt_unwatch` (`gone`/`full`/`busy`). O espectador "fica" na porta do Dojo da praça (`pose 'watch'`). |
 | `kt_unwatch` | — | Sair da plateia (reaparece na porta do Dojo). |
 | `kt_cheer` | `r` ∈ `go, clap, fire, wow, lol`, `side?` (id de um lutador, `0` = ninguém) | Torcida. 1 a cada 0,7 s; `side` escolhe por quem torce (placa). **Não afeta a luta.** |
+| `vc_invite` | `to` | Voz: convida `to` para o **meu** grupo (cria um se eu não tiver). `to` já em grupo → `vc_status in_group` (tem que pedir). Anti-spam 800 ms, até 6 pendentes. Se `to` já tinha me convidado/pedido, vira aceite. |
+| `vc_request` | `to` | Voz: pede para entrar no grupo de `to` (quem foi clicado aprova). Aceito → saio do meu grupo atual. |
+| `vc_reply` | `from`, `accept` | Responde convite/pedido de voz de `from`. |
+| `vc_leave` | — | Sai do grupo de voz. |
+| `vc_kick` | `id` | Só o dono 👑 do grupo: remove `id`. |
+| `vc_mute` | `m` (mudo), `d` (sem som) | Estado do meu microfone/áudio, mostrado ao grupo. |
+| `vc_signal` | `to`, `d` | Sinalização WebRTC para outro **membro do mesmo grupo** (senão é descartada). `d` ∈ `{sdp:{type:offer\|answer, sdp}}` (≤ 12 000 chars), `{ice:[{candidate, sdpMid?, sdpMLineIndex?}]}` (≤ 24; `candidate:''` = fim), `{restart:true}`, `{reset:true}`. |
 
 ## Servidor → Cliente
 | t | Campos | Quando |
 |---|---|---|
-| `welcome` | `v`, `you`, `map`, `players[]`, `lamps{id:bool}`, `score{red,blue}`, `ball[x,y]\|null`, `match` (null ou `{left,right,first}`), `fights[]` (`{id,a,b,rd,wins,w}` lutas de karatê em andamento, com plateia) | Após `hello` válido |
-| `join` | `player:{id,nick,look,x,y,dir,pose}` | Alguém entrou (não vai para quem entrou) |
+| `welcome` | `v`, `you`, `map`, `players[]` (cada um com `vg` = grupo de voz, 0 = nenhum), `lamps{id:bool}`, `score{red,blue}`, `ball[x,y]\|null`, `match` (null ou `{left,right,first}`), `fights[]` (`{id,a,b,rd,wins,w}` lutas de karatê em andamento, com plateia) | Após `hello` válido |
+| `join` | `player:{id,nick,look,x,y,dir,pose,vg}` | Alguém entrou (não vai para quem entrou) |
 | `leave` | `id` | Alguém saiu |
 | `snap` | `ts`, `p:[[id,x,y,dir,moving(0/1),pose]]`, `b:[x,y]\|null` | 15×/s (`b` null = bola livre escondida durante Gol a Gol) |
 | `chat` | `id`, `text` | Fala (inclui a própria) |
@@ -50,6 +57,11 @@ Coordenadas em pixels do mapa (inteiros). `dir` = `1` (direita) ou `-1` (esquerd
 | `kt_watch` | `id`, `a:{id,nick}`, `b:{id,nick}`, `rd`, `wins`, `w` | Confirmação: você está na plateia (a partir daí recebe `kt_state`/`kt_event`/`kt_cheer` da luta) |
 | `kt_unwatch` | `id`, `reason` (`left`/`busy`/`gone`/`full`) | Saiu da plateia (`left` = pediu; `busy` = foi jogar) ou entrada recusada (`gone` = luta não existe; `full` = 24 lugares ocupados) |
 | `kt_cheer` | `by`, `r`, `side` | Torcida de alguém da plateia (para os lutadores e a plateia daquela luta) |
+| `vc_ask` | `from`, `nick`, `kind` (`invite`\|`request`), `ttl`, `size` | Convite para a voz / pedido para entrar no meu grupo (expira em `ttl` = 30 s). `size` = pessoas no grupo. |
+| `vc_status` | `status`, `with`, `nick` | `sent`, `asked`, `declined`, `expired`, `full`, `in_group`, `no_group`, `same`, `gone`, `invalid`, `cooldown`, `too_many` |
+| `vc_group` | `g:{id, owner, members:[{id, m, d}]}` ou `g:null` + `reason` (`left`/`kicked`/`dissolved`/`switch`), `ice?` | Estado do meu grupo (a cada mudança). `ice` (lista `RTCIceServer`: STUN + TURN com credencial temporária) só vai para quem acabou de entrar. Grupo que fica com 1 pessoa acaba (`dissolved`). |
+| `vc_tag` | `id`, `g` | Para **todos**: o player entrou (`g` = id do grupo) ou saiu (`g = 0`) de um grupo de voz → 🎧 no nome e "Pedir para entrar" no cartão. |
+| `vc_signal` | `from`, `d` | Sinalização repassada de outro membro (já validada). |
 
 `pose`: `''` (em pé), `'sit'` (chão), `'bench'` (no banco) e, no Gol a Gol: `shooter`, `kick`, `keeper`, `diveU`/`diveD` (mergulhando), `lieU`/`lieD` (caído). `'dojo'` = lutando karatê, `'watch'` = na plateia do Dojo (não desenhar nenhum dos dois na praça).
 
@@ -60,6 +72,9 @@ Fases do Gol a Gol (`ph`): `countdown` → `aim` → `flight` → `result` → (
 Histórico: **v2** (2026-10-01) — desafios e Gol a Gol; `ball`/`b` podem ser `null`.
 Karatê (2026-10-01, ainda v2: só campos/mensagens novos e opcionais) — `game` no desafio, `fights` no welcome, `kt_*`.
 Plateia do Dojo (2026-10-03, ainda v2: mensagens novas e campos opcionais) — `kt_watch`, `kt_unwatch`, `kt_cheer`, `kt_live`, `rd/wins/w` em `fights`.
+Chat de voz (2026-10-03, ainda v2: só mensagens/campos novos) — `vc_*`, `vg` nos players; `maxPayload` do WebSocket
+subiu de 4 KB para 16 KB (o SDP de uma oferta WebRTC passa de 4 KB com escapes).
+O **áudio não passa pelo WebSocket**: vai direto entre navegadores (WebRTC/Opus) ou pelo TURN (coturn). Ver ARCHITECTURE.
 
 ## Regras de evolução
 - Campo novo opcional → compatível, não precisa subir versão.

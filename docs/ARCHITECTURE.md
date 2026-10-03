@@ -21,11 +21,12 @@
 ## Servidor
 - `server/index.js`
   - Serve `client/` em `/` e `shared/` em `/shared/` (com proteção a path traversal) e `/health`.
-  - WebSocket em `/ws` (`maxPayload` 4 KB). Primeira mensagem tem que ser `hello` em até 10 s.
+  - WebSocket em `/ws` (`maxPayload` 16 KB — por causa do SDP da voz). Primeira mensagem tem que ser `hello` em até 10 s.
   - Rate limit por conexão: 40 msgs/s (token bucket); excesso é descartado.
   - Heartbeat ping/pong a cada 15 s derruba conexões mortas.
   - Loop `setInterval` a 30 Hz chama `room.tick(dt)`; a cada 2 ticks faz broadcast de `room.snapshot()`.
 - `server/Room.js`
+  - Mensagens `vc_*` vão direto para `room.voice` (`server/VoiceHub.js`) em qualquer lugar (praça, Gol a Gol, dojo).
   - `addPlayer(hello, send)` valida nick (único, com sufixo numérico) e visual, escolhe spawn, manda `welcome` e avisa os outros com `join`.
   - `handle(id, msg)` despacha `move | chat | emote | interact`.
   - Interações são **pendentes**: o player anda até o ponto de interação e, ao chegar (`arrive`), a ação é executada se ainda estiver perto (tolerância 40 px).
@@ -116,6 +117,39 @@
 - **Lugares** (`seat`) são decididos no servidor (primeiro livre) para todos verem a mesma plateia; o cliente mapeia
   `seat` → posição (`seatOrder`: do meio para as pontas na fila de trás).
 - **Banda**: cada espectador custa o mesmo que um lutador (30 `kt_state`/s). Lotação 24 por luta (`ARENA.MAX_WATCHERS`).
+
+## Chat de voz por grupos (WebRTC)
+```
+ navegador A ──vc_invite/vc_request/vc_reply──▶ server/VoiceHub.js (room.voice)   grupos, convites, mudo
+            ◀──vc_ask / vc_group(+ice) / vc_tag──        │ não conhece áudio
+ navegador A ──vc_signal{to,d}──▶ VoiceHub (só se os dois estão no MESMO grupo) ──▶ navegador B
+ navegador A ◀═════════════ áudio Opus (WebRTC, P2P) ═════════════▶ navegador B
+                   └──── ou via TURN (coturn, container niltonpark-turn) quando não dá direto
+```
+- **Grupos no servidor** (`VoiceHub`, plugado no `Room` como o minigame): `groups`, `groupOf`, `asks` (convites/pedidos
+  com TTL 30 s). Convidar quem já está em grupo não pode — o cartão oferece **"Pedir para entrar no grupo de voz"**
+  (o player clicado aprova). Aceitar um convite/pedido de outro grupo = trocar de grupo (`reason:'switch'`). O dono 👑
+  remove gente; quando ele sai, o mais antigo vira dono; grupo com 1 pessoa acaba. Máximo de 8 (malha).
+- **Malha P2P**: cada membro tem uma `RTCPeerConnection` com cada outro (`client/js/voice/peer.js`). Só o lado de
+  **menor id** oferece (inclusive reinício de ICE) → nunca há "glare". Recuperação: `disconnected` 2,5 s ou `failed` →
+  reinício de ICE (até 2×) → recria a conexão do zero (`reset`); um vigia de 10 s repete enquanto não conectar.
+  Candidatos ICE são agrupados (60 ms) por causa do limite de 40 msgs/s por conexão.
+- **Microfone** (`voice/mic.js`): `getUserMedia` (eco/ruído/ganho do navegador) → WebAudio: volume de entrada →
+  analisador (nível, ativação por voz) → atraso de 40 ms só na ativação por voz (não corta o começo da fala) →
+  **porteira** (gain 0/1 com rampa) → `MediaStreamDestination`. A faixa enviada é sempre a mesma: trocar de microfone ou
+  de eco/ruído não renegocia. Modos: voz aberta, ativação por voz (limiar em dB), apertar-para-falar (tecla / botão).
+- **Opus**: `tuneOpusSdp` liga DTX (silêncio ≈ 0 kbps), FEC (perda no 4G), mono; bitrate por `sender.setParameters`
+  (16/32/64 kbps nas configurações).
+- **Reprodução**: um `<audio>` por pessoa (é o caminho que o cancelamento de eco dos navegadores conhece; WebAudio
+  em faixas remotas tem eco no Chrome). Volume por pessoa/geral via `el.volume`, saída por `setSinkId` quando existe.
+  Autoplay bloqueado → aviso "toque para ativar".
+- **Quem está falando**: dos pacotes RTP (`receiver.getSynchronizationSources().audioLevel`) — sem WebAudio por pessoa;
+  o meu vem do analisador do microfone. Desenhado no mapa (nome verde com ondas, 🔇) e no painel.
+- **Microfone só aberto quando serve**: no grupo, testando nas configurações ou com convite esperando resposta.
+- **HTTPS obrigatório para falar** (`getUserMedia` exige contexto seguro). Em `http://IP` dá para entrar no grupo e
+  só ouvir; o painel avisa.
+- **TURN**: credenciais temporárias no padrão "TURN REST API" do coturn (`usuário = expira:npID`,
+  `senha = base64(HMAC-SHA1(TURN_SECRET, usuário))`, 12 h), entregues no `vc_group` de quem entra.
 
 ## Performance (MVP)
 - Render ~0,5 ms/frame em desktop (medido com 1–3 players).

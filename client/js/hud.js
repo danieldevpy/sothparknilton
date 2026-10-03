@@ -155,7 +155,7 @@ export class Hud {
   // ---------- desafios / Gol a Gol ----------
 
   // Cartão ao clicar em outro player.
-  playerCard(p, sx, sy, { busy, onChallenge, onKarate, onWave }) {
+  playerCard(p, sx, sy, { busy, onChallenge, onKarate, onWave, voice }) {
     const card = $('#player-card');
     card.replaceChildren();
     const head = el('div', 'pc-head');
@@ -173,11 +173,20 @@ export class Hud {
     kt.addEventListener('click', () => { onKarate?.(); this.closePlayerCard(); });
     const wave = el('button', 'pc-wave', '👋 Acenar');
     wave.addEventListener('click', () => { onWave(); this.closePlayerCard(); });
-    card.append(head, btn, kt, wave);
+    card.append(head, btn, kt);
+    // chat de voz: convidar / pedir para entrar no grupo (ver voice/VoiceClient.cardAction)
+    if (voice) {
+      const vb = el('button', 'pc-voice', voice.label);
+      vb.disabled = !!voice.disabled;
+      vb.addEventListener('click', () => { voice.onClick?.(); this.closePlayerCard(); });
+      card.append(vb);
+    }
+    card.append(wave);
     card.hidden = false;
     const w = 220;
+    const h = voice ? 236 : 190;
     card.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, sx - w / 2))}px`;
-    card.style.top = `${Math.max(8, Math.min(window.innerHeight - 190, sy - 190))}px`;
+    card.style.top = `${Math.max(8, Math.min(window.innerHeight - h, sy - h))}px`;
   }
 
   closePlayerCard() {
@@ -186,10 +195,11 @@ export class Hud {
 
   // Convite de desafio recebido (empilha no canto).
   // `title`/`sub` opcionais: outros minigames (ex.: karatê) trocam o texto.
-  invite({ from, nick, rematch, ttl, onAccept, onDecline, title: t, sub: s }) {
-    this.removeInvite(from);
-    const box = el('div', `invite${rematch ? ' rematch' : ''}`);
-    box.dataset.from = from;
+  // `key` separa convites de tipos diferentes da mesma pessoa (ex.: voz = `v<id>`); `cls` muda o estilo.
+  invite({ from, key = from, cls = '', nick, rematch, ttl, onAccept, onDecline, title: t, sub: s }) {
+    this.removeInvite(key);
+    const box = el('div', `invite${rematch ? ' rematch' : ''}${cls ? ` ${cls}` : ''}`);
+    box.dataset.from = String(key);
     const title = el('div', 'inv-title', t || (rematch ? `🔥 ${nick} quer REVANCHE!` : `⚽ ${nick} te desafiou!`));
     const sub = el('div', 'inv-sub', s || 'Gol a Gol — primeiro gol vence');
     const row = el('div', 'inv-row');
@@ -205,8 +215,8 @@ export class Hud {
     setTimeout(() => box.remove(), ttl + 200);
   }
 
-  removeInvite(from) {
-    $('#invites').querySelector(`[data-from="${Number(from)}"]`)?.remove();
+  removeInvite(key) {
+    $('#invites').querySelector(`[data-from="${CSS.escape(String(key))}"]`)?.remove();
   }
 
   clearInvites() {
