@@ -64,7 +64,7 @@ Simulação (`AdaptiveDelay` vs. atraso fixo, % de quadros com buffer vazio): ka
 praça em 4G ruim 4,6% → 1,1%; Wi-Fi ruim 25,9% → 12% (o resto é coberto pela extrapolação curta).
 
 ## Domínio + HTTPS (obrigatório para o microfone do chat de voz)
-> 🔒 **https://park.magmacursosltda.com.br** (DNS `A → 204.157.124.113` já criado)
+> 🔒 **https://park.magmacursosltda.com.br** — no ar desde 2026-10-03 (Let's Encrypt, renovação automática pelo certbot da VPS)
 
 O navegador só libera o microfone em HTTPS. Pelo `http://IP:3000` o chat de voz funciona **só para ouvir**.
 O nginx da VPS (portas 80/443) é compartilhado com outros sistemas, então o domínio entra como **mais um site**,

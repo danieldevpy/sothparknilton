@@ -114,4 +114,4 @@ cota por usuário 24 (não 10).
 
 **D-025 — Microfone exige HTTPS → domínio.** (2026-10-03)
 `getUserMedia` só funciona em contexto seguro; em `http://IP:3000` dá para entrar no grupo e **só ouvir** (o painel
-avisa). Para falar em produção: domínio `park.magmacursosltda.com.br` com HTTPS (nginx da VPS + Let's Encrypt).
+avisa). Para falar em produção: domínio `park.magmacursosltda.com.br` com HTTPS (nginx da VPS + Let's Encrypt) — no ar.
