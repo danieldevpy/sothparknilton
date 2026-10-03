@@ -4,6 +4,10 @@
 //
 // Enquanto você luta, o Game para de desenhar a praça e chama `draw()` daqui.
 // Quem está na praça só vê os lutadores sumirem (pose 'dojo') e o resultado no chat.
+//
+// PLATEIA (role 'watch'): quem entra pelo prédio do Dojo vê a mesma cena, sem controles —
+// os dois lutadores interpolados, a torcida (render/crowd.js) e a interface de espectador
+// (karate-watch.js: reações, locutor, trocar de luta). Lutadores também veem a torcida.
 
 import { MSG } from '/shared/constants.js';
 import { KT, MOVES, isFree, walkStep, dashVector, clamp, clampArena } from '/shared/karate.js';
@@ -13,6 +17,9 @@ import { prerenderDojo, drawSensei, drawGong, DOJO, SENSEI } from '../render/doj
 import { outlinedText, roundRect, FONT, INK } from '../render/paint.js';
 import { play } from '../audio.js';
 import { AdaptiveDelay } from '../jitter.js';
+import { CHEERS } from '/shared/arena.js';
+import { drawCrowdBack, drawCrowdFront, drawChant, drawFanSay, chantText, seatSpot, BACK_Y } from '../render/crowd.js';
+import { WatchUi } from './karate-watch.js';
 
 const STATE_DELAY_MS = 60; // mínimo; cresce sozinho se a rede tiver jitter
 const RESEND_MS = 150;
@@ -60,7 +67,9 @@ export class KarateClient {
     this.game = game;
     this.hud = hud;
     this.busy = new Map(); // playerId -> fightId (quem está lutando em algum dojo)
-    this.fight = null; // minha luta: { id, a, b }
+    this.fight = null; // luta na tela: { id, a, b } (minha, ou a que estou assistindo)
+    this.role = null; // 'fighter' | 'watch'
+    this.watchUi = new WatchUi(this);
     this.fx = new FxLayer();
     this.bg = null;
     this.held = new Set();
@@ -96,6 +105,13 @@ export class KarateClient {
     this.lastBeep = null;
     this.clockShown = null;
     this.fx.items = [];
+    // torcida
+    this.crowd = []; // [{ id, side, seat }]
+    this.cheers = new Map(); // playerId -> { r, at }
+    this.fanSays = new Map(); // playerId -> { text, until, fill }
+    this.goLog = [];
+    this.chant = null;
+    this.hype = 0;
   }
 
   // ---------- consultas ----------
@@ -108,9 +124,13 @@ export class KarateClient {
     return !!this.fight;
   }
 
-  // jogador está lutando num dojo (some da praça)
+  // jogador está lutando num dojo ou na plateia (some da praça)
   hidden(id) {
-    return this.busy.has(id);
+    return this.busy.has(id) || this.game.arena.isWatching(id);
+  }
+
+  watching() {
+    return this.role === 'watch';
   }
 
   nickOf(id) {
@@ -129,9 +149,24 @@ export class KarateClient {
     this.game.send({ t: MSG.CHALLENGE, to: pid, game: 'karate' });
   }
 
+  // entrar na plateia de uma luta (ou trocar de luta)
+  watch(fightId) {
+    if (this.role === 'fighter') return;
+    this.game.send({ t: MSG.KT_WATCH, id: fightId });
+  }
+
+  leaveWatch() {
+    if (this.role !== 'watch') return;
+    this.game.send({ t: MSG.KT_UNWATCH });
+    this.leave();
+    this.hud.toast('Você saiu do dojo 👋');
+    play('click');
+  }
+
   // ---------- rede ----------
 
   onMessage(msg, now) {
+    this.game.arena.onMessage(msg, now); // lista de lutas ao vivo do prédio do Dojo (não consome)
     switch (msg.t) {
       case MSG.WELCOME:
         this.busy.clear();
@@ -141,6 +176,12 @@ export class KarateClient {
       case MSG.KT_STATE: this.onState(msg, now); return true;
       case MSG.KT_EVENT: this.onEvent(msg, now); return true;
       case MSG.KT_END: this.onEnd(msg); return true;
+      case MSG.KT_WATCH: this.onWatch(msg, now); return true;
+      case MSG.KT_UNWATCH: this.onUnwatch(msg); return true;
+      case MSG.KT_CHEER: this.onCheer(msg, now); return true;
+      case MSG.KT_LIVE:
+        if (this.fight?.id === msg.id) this.setCrowd(msg.w, now);
+        return true; // a lista geral fica no ArenaClient (já processou)
       case MSG.CHALLENGE:
         if (msg.game !== 'karate') return false;
         this.onInvite(msg);
@@ -163,11 +204,92 @@ export class KarateClient {
     this.markBusy(m);
     this.hud.log(null, `🥋 ${m.a.nick} e ${m.b.nick} foram lutar no Dojo!`);
     if (m.a.id !== this.me && m.b.id !== this.me) return;
+    if (this.role === 'watch') this.leave(); // o servidor já me tirou da plateia
     this.fight = { id: m.id, a: m.a, b: m.b };
+    this.role = 'fighter';
     this.reset();
     this.enter();
     play('kt_gong');
     void now;
+  }
+
+  // ---------- plateia ----------
+
+  onWatch(m, now) {
+    if (this.role === 'fighter') return;
+    this.fight = { id: m.id, a: m.a, b: m.b };
+    this.role = 'watch';
+    this.reset();
+    this.setCrowd(m.w, now);
+    this.enter();
+    this.watchUi.show(this.fight);
+    this.hud.log(null, `👀 Você entrou na plateia: ${m.a.nick} × ${m.b.nick}`);
+    play('crowd');
+  }
+
+  onUnwatch(m) {
+    const text = {
+      busy: this.role === 'watch' ? 'Você saiu da plateia para jogar!' : 'Você está ocupado jogando',
+      gone: 'Essa luta já acabou 😢',
+      full: 'Plateia lotada! Não cabe mais ninguém 🪑',
+    }[m.reason];
+    if (text) this.hud.toast(text);
+    if (this.role === 'watch' && this.fight?.id === m.id && (m.reason === 'left' || m.reason === 'busy')) this.leave();
+  }
+
+  setCrowd(w, now) {
+    const old = new Set(this.crowd.map((c) => c.id));
+    this.crowd = (w || []).map(([id, side, seat]) => ({ id, side, seat }));
+    // quem acabou de chegar acena para os lutadores
+    if (old.size || this.crowd.length) {
+      for (const c of this.crowd) if (!old.has(c.id) && c.id !== this.me && this.views) this.cheers.set(c.id, { r: 'clap', at: now });
+    }
+  }
+
+  onCheer(m, now) {
+    if (!this.fight) return;
+    const c = this.crowd.find((x) => x.id === m.by);
+    if (!c) return;
+    c.side = m.side;
+    this.cheers.set(m.by, { r: m.r, at: now });
+    this.hype = Math.min(1, this.hype + 0.09);
+    const p = seatSpot(c.seat);
+    const y = p.row === 'back' ? p.headY - 30 : p.y - 90;
+    this.parts.push({ kind: 'emoji', text: CHEERS[m.r]?.icon || '✨', x: p.x + (Math.random() - 0.5) * 20, y, born: now, life: 1500, seed: Math.random() });
+    if (m.r === 'go' && m.side) {
+      const nick = this.nickOf(m.side);
+      this.fanSays.set(m.by, { text: `VAI ${nick.toUpperCase()}!`, until: now + 1400, fill: m.side === this.fight.a.id ? '#ffd9cf' : '#d6e4ff' });
+      this.goLog = this.goLog.filter((g) => now - g.at < 4000);
+      this.goLog.push({ side: m.side, by: m.by, at: now });
+      const fans = new Set(this.goLog.filter((g) => g.side === m.side).map((g) => g.by));
+      if (fans.size >= 2 && (!this.chant || now - this.chant.at > this.chant.dur * 1000 * 0.8)) {
+        this.chant = { text: chantText(nick), sideIdx: m.side === this.fight.a.id ? 0 : 1, at: now, dur: 2.6, x: KT.ARENA_W / 2 };
+        this.hype = Math.min(1, this.hype + 0.15);
+        play('crowd');
+      }
+    }
+    if (m.by === this.me || Math.random() < 0.35) play('kt_cheer');
+  }
+
+  // dados de desenho de cada torcedor
+  fans(now) {
+    const f = this.fight;
+    return this.crowd.map((c) => {
+      const p = this.game.players.get(c.id);
+      const sideIdx = c.side === f.a.id ? 0 : c.side === f.b.id ? 1 : -1;
+      return {
+        id: c.id,
+        seat: c.seat,
+        sideIdx,
+        sideNick: sideIdx >= 0 ? this.nickOf(c.side) : '',
+        look: p?.look ?? { hat: '#888888', shirt: '#888888', skin: '#ffd9b3' },
+        cheer: this.cheers.get(c.id) || null,
+        emote: p?.emote ?? null,
+        emoteAt: p?.emoteAt ?? 0,
+        talking: (this.fanSays.get(c.id)?.until || 0) > now,
+        me: c.id === this.me,
+      };
+    });
   }
 
   onState(s, now) {
@@ -191,6 +313,11 @@ export class KarateClient {
 
   onEvent(e, now) {
     if (!this.fight) return;
+    if (this.role === 'watch') this.watchUi.narrate(e);
+    if (this.crowd.length && (e.kind === 'hit' || e.kind === 'parry' || e.kind === 'guardbreak')) {
+      const big = e.kind !== 'hit' || e.m === 'hkick' || e.m === 'punch' || e.kd || e.counter;
+      this.hype = Math.min(1, this.hype + (big ? 0.14 : 0.03));
+    }
     const mine = e.by === this.me;
     const W = KT.ARENA_W;
     const top = KT.ARENA_H / 2 - 150;
@@ -229,7 +356,7 @@ export class KarateClient {
         break;
       case 'parry':
         this.spark('ring', e.x, e.y - 52, now, '#ffffff', 1.6);
-        this.big('DEFESA PERFEITA!', { size: 40, color: '#7cfc9a', sub: e.by === this.me ? 'ele ficou tonto — ataque!' : 'você ficou tonto!' }, now, e.x, e.y - 160);
+        this.big('DEFESA PERFEITA!', { size: 40, color: '#7cfc9a', sub: e.by === this.me ? 'ele ficou tonto — ataque!' : e.to === this.me ? 'você ficou tonto!' : `${this.nickOf(e.to)} ficou tonto!` }, now, e.x, e.y - 160);
         this.say(SENSEI_LINES.parry, now);
         play('kt_parry');
         this.hitstop(now, 160);
@@ -290,7 +417,9 @@ export class KarateClient {
     this.gongAt = now;
     this.shake(time ? 0 : 14, now);
     this.hitstop(now, time ? 0 : 400);
-    if (!time) setTimeout(() => play(e.winner === this.me ? 'goal' : 'boo'), 500);
+    const watcher = this.role === 'watch';
+    if (!time) setTimeout(() => play(watcher ? 'crowd' : e.winner === this.me ? 'goal' : 'boo'), 500);
+    if (this.crowd.length) this.hype = Math.min(1, this.hype + 0.3);
   }
 
   onEnd(m) {
@@ -301,6 +430,21 @@ export class KarateClient {
     const won = m.winner === this.me;
     const lost = m.loser === this.me;
     if (!this.fight || this.fight.id !== m.id) return;
+    if (this.role === 'watch') {
+      // a plateia vê o campeão comemorar um pouco antes de voltar para a praça
+      const now = performance.now();
+      this.big(`🏆 ${m.winnerNick} VENCEU!`, { size: 54, color: '#ffe14d', sub: wo ? `${m.loserNick} fugiu do dojo 🐔` : `${m.score[0]}×${m.score[1]} — que luta!` }, now, KT.ARENA_W / 2, KT.ARENA_H / 2 - 30);
+      this.watchUi.say(wo ? `${m.loserNick} fugiu! Vitória de ${m.winnerNick} por W.O.` : `FIM DE LUTA! ${m.winnerNick} é o campeão do dojo! 🏆`, true);
+      this.hype = 1;
+      play('win');
+      clearTimeout(this.leaveTimer);
+      this.leaveTimer = setTimeout(() => {
+        if (this.role !== 'watch' || this.fight?.id !== m.id) return;
+        this.leave();
+        this.hud.toast(`🥋 ${m.winnerNick} venceu! De volta à praça`);
+      }, 3600);
+      return;
+    }
     const delay = wo ? 300 : 900;
     clearTimeout(this.leaveTimer);
     this.leaveTimer = setTimeout(() => {
@@ -350,7 +494,13 @@ export class KarateClient {
   }
 
   onChat(msg, now) {
-    if (!this.fight || (msg.id !== this.fight.a.id && msg.id !== this.fight.b.id)) return;
+    if (!this.fight) return;
+    if (this.crowd.some((c) => c.id === msg.id)) {
+      // plateia fala baixinho: balão pequeno em cima do lugar dela, fora do tatame
+      this.fanSays.set(msg.id, { text: msg.text, until: now + Math.min(3500, 1400 + msg.text.length * 50), fill: '#ffffff' });
+      return;
+    }
+    if (msg.id !== this.fight.a.id && msg.id !== this.fight.b.id) return;
     this.says.set(msg.id, { text: msg.text, until: now + Math.min(4000, 1500 + msg.text.length * 60) });
   }
 
@@ -368,10 +518,13 @@ export class KarateClient {
   }
 
   leave() {
+    clearTimeout(this.leaveTimer);
     this.fight = null;
+    this.role = null;
     this.reset();
     document.body.classList.remove('kt-on');
     if (this.ui) this.ui.hidden = true;
+    this.watchUi.hide();
   }
 
   buildUi() {
@@ -460,6 +613,7 @@ export class KarateClient {
   // true = tecla consumida pela luta
   key(ev, down, now) {
     if (!this.fight) return false;
+    if (this.role === 'watch') return this.watchUi.key(ev, down);
     const code = ev.code;
     if (MOVE_KEYS[code] || BLOCK_KEYS.has(code)) {
       if (down) this.held.add(code);
@@ -475,7 +629,7 @@ export class KarateClient {
   }
 
   pointerDown(ev) {
-    if (!this.fight || ev.pointerType === 'touch') return;
+    if (!this.fight || this.role !== 'fighter' || ev.pointerType === 'touch') return;
     if (ev.button === 0) this.action('jab', performance.now());
     else if (ev.button === 2) this.action('kick', performance.now());
   }
@@ -506,6 +660,7 @@ export class KarateClient {
 
   action(a, now) {
     const s = this.last;
+    if (this.role !== 'fighter') return;
     if (!s || s.ph !== 'fight') return;
     const [mx, my] = this.axis();
     this.game.send({ t: MSG.KT_ACT, a, dx: mx, dy: my });
@@ -539,7 +694,9 @@ export class KarateClient {
 
   frame(dt, now) {
     if (!this.fight) return;
-    this.sendInput(now);
+    if (this.role === 'fighter') this.sendInput(now);
+    this.hype = Math.max(0, this.hype - dt * (this.hype > 0.6 ? 0.12 : 0.07));
+    this.watchUi.update(now);
     this.fx.update(now);
     this.parts = this.parts.filter((p) => now - p.born < p.life);
     this.ghosts = this.ghosts.filter((g) => now - g.born < 220);
@@ -566,23 +723,55 @@ export class KarateClient {
     return { a, b, k, at };
   }
 
+  // lutador `id` interpolado com atraso (oponente; ou os dois, para a plateia)
+  interpolated(id, smp) {
+    const { a, b, k, at } = smp;
+    const oa = a.by[id];
+    const ob = b.by[id];
+    if (!oa || !ob) return null;
+    const v = { ...ob, x: oa.x + (ob.x - oa.x) * k, y: oa.y + (ob.y - oa.y) * k, t: ob.t + Math.max(0, at - b.at) / 1000 };
+    // buffer vazio (rede engasgou): continua o movimento por até 100 ms em vez de congelar
+    const prevS = this.buf[this.buf.length - 2];
+    if (a === b && at > b.at && prevS?.by[id] && b.at > prevS.at) {
+      const e = Math.min(at - b.at, 100) / (b.at - prevS.at);
+      v.x += (ob.x - prevS.by[id].x) * e;
+      v.y += (ob.y - prevS.by[id].y) * e;
+      clampArena(v);
+    }
+    return v;
+  }
+
+  // animação de passos, rastro do dash e vida "atrasada"
+  decorateViews(dt, now) {
+    for (const v of this.views) {
+      const w = (this.walk.get(v.id) || 0) + (v.moving || v.st === 'walk' ? dt * 14 : 0);
+      this.walk.set(v.id, w);
+      v.phase = w;
+      if (v.st === 'dash' && now - (this.ghostAt.get(v.id) || 0) > 30) {
+        this.ghosts.push({ ...v, born: now });
+        this.ghostAt.set(v.id, now);
+      }
+      const show = this.hpShow.get(v.id) ?? v.hp;
+      this.hpShow.set(v.id, show > v.hp ? Math.max(v.hp, show - dt * 45) : v.hp);
+    }
+  }
+
   updateViews(dt, now) {
+    const smp = this.sample(now);
+    if (this.role === 'watch') {
+      // plateia: os dois interpolados, sem previsão
+      const vs = [this.fight.a.id, this.fight.b.id].map((id) => this.interpolated(id, smp));
+      if (vs.some((v) => !v)) return;
+      this.views = vs;
+      this.decorateViews(dt, now);
+      return;
+    }
     const s = this.last;
     const meS = s.by[this.me];
     const oppId = this.oppId();
     // oponente: interpolado com atraso
-    const { a, b, k, at } = this.sample(now);
-    const oa = a.by[oppId];
-    const ob = b.by[oppId];
-    const opp = { ...ob, x: oa.x + (ob.x - oa.x) * k, y: oa.y + (ob.y - oa.y) * k, t: ob.t + Math.max(0, at - b.at) / 1000 };
-    // buffer vazio (rede engasgou): continua o movimento por até 100 ms em vez de congelar
-    const prevS = this.buf[this.buf.length - 2];
-    if (a === b && at > b.at && prevS?.by[oppId] && b.at > prevS.at) {
-      const e = Math.min(at - b.at, 100) / (b.at - prevS.at);
-      opp.x += (ob.x - prevS.by[oppId].x) * e;
-      opp.y += (ob.y - prevS.by[oppId].y) * e;
-      clampArena(opp);
-    }
+    const opp = this.interpolated(oppId, smp);
+    if (!meS || !opp) return;
 
     // eu: previsão local
     const age = (now - s.at) / 1000;
@@ -642,18 +831,7 @@ export class KarateClient {
     const mine = { ...meS, x: p.x, y: p.y, st, t, dir, moving: st === 'walk' };
 
     this.views = [mine, opp];
-    for (const v of this.views) {
-      const w = (this.walk.get(v.id) || 0) + (v.moving || v.st === 'walk' ? dt * 14 : 0);
-      this.walk.set(v.id, w);
-      v.phase = w;
-      if (v.st === 'dash' && now - (this.ghostAt.get(v.id) || 0) > 30) {
-        this.ghosts.push({ ...v, born: now });
-        this.ghostAt.set(v.id, now);
-      }
-      // barra de vida "atrasada"
-      const show = this.hpShow.get(v.id) ?? v.hp;
-      this.hpShow.set(v.id, show > v.hp ? Math.max(v.hp, show - dt * 45) : v.hp);
-    }
+    this.decorateViews(dt, now);
   }
 
   updateCamera(dt) {
@@ -662,7 +840,9 @@ export class KarateClient {
     const span = Math.abs(a.x - b.x);
     const mobile = document.body.classList.contains('mobile');
     const viewW = clamp(span + (mobile ? 420 : 560), mobile ? 600 : 720, 1150);
-    const viewH = mobile ? 470 : 610;
+    // plateia no celular: câmera um pouco mais aberta para a fila de trás aparecer sob as barras de vida
+    const watchMobile = mobile && this.role === 'watch';
+    const viewH = watchMobile ? 640 : mobile ? 470 : 610;
     const tz = clamp(Math.min(vw / viewW, vh / viewH), 0.32, 1.6);
     const cam = this.cam;
     cam.z = cam.ready ? cam.z + (tz - cam.z) * Math.min(1, dt * 3) : tz;
@@ -673,7 +853,7 @@ export class KarateClient {
     const hi = KT.ARENA_W + DOJO.MX - w / 2;
     const cx = lo < hi ? clamp(mid, lo, hi) : KT.ARENA_W / 2;
     // tatame inteiro visível acima da ajuda/chat, com um pedaço da parede do dojo
-    const cy = KT.ARENA_H / 2 - 70 + (mobile ? 45 : 0);
+    const cy = KT.ARENA_H / 2 - 70 + (watchMobile ? 10 : mobile ? 45 : 0);
     const tx = cx - w / 2;
     const ty = cy - h / 2;
     if (!cam.ready) { cam.x = tx; cam.y = ty; cam.ready = true; }
@@ -683,7 +863,7 @@ export class KarateClient {
   }
 
   updateHud() {
-    if (!this.ui || !this.last) return;
+    if (!this.ui || !this.last || this.role !== 'fighter') return;
     const me = this.last.by[this.me];
     if (!me) return;
     const dash = this.ui.querySelector('.kt-dash');
@@ -757,6 +937,10 @@ export class KarateClient {
     const ring = Math.max(0, 1 - (now - this.gongAt) / 1400);
     drawGong(ctx, ring);
     drawSensei(ctx, t, this.sensei && now < this.sensei.until ? 1 : 0);
+    // torcida atrás do tatame (almofadas vazias mostram os lugares livres)
+    const fans = this.fans(now);
+    drawCrowdBack(ctx, fans, now, this.hype);
+    if (this.chant) drawChant(ctx, this.chant, now);
 
     // fantasmas do dash
     for (const g of this.ghosts) {
@@ -766,6 +950,8 @@ export class KarateClient {
     const order = [...this.views].sort((p, q) => p.y - q.y);
     for (const v of order) this.drawFighterView(ctx, v, now, 1);
 
+    drawCrowdFront(ctx, fans, now, this.hype);
+    this.drawFanSays(ctx, now);
     this.drawParts(ctx, now);
     this.fx.draw(ctx, now);
     // nomes não se sobrepõem quando os dois estão colados
@@ -810,6 +996,19 @@ export class KarateClient {
     if (mine) outlinedText(ctx, '▼', x, y - 18 + Math.sin(now / 150) * 2, { size: 12, fill: '#ffe14d', lw: 3 });
     const said = this.says.get(v.id);
     if (said && now < said.until) this.bubble(ctx, said.text, x, y - 30, '#ffffff');
+  }
+
+  drawFanSays(ctx, now) {
+    for (const [id, s] of this.fanSays) {
+      if (now > s.until) {
+        this.fanSays.delete(id);
+        continue;
+      }
+      const c = this.crowd.find((x) => x.id === id);
+      if (!c) continue;
+      const p = seatSpot(c.seat);
+      drawFanSay(ctx, s.text, p.x, p.row === 'back' ? Math.min(p.headY - 22, BACK_Y - 120) : p.y - 96, s.fill);
+    }
   }
 
   bubble(ctx, text, x, y, fill) {
@@ -881,6 +1080,14 @@ export class KarateClient {
           ctx.fillStyle = p.color;
           ctx.fill();
         }
+      } else if (p.kind === 'emoji') {
+        ctx.translate(p.x + Math.sin(k * 8 + p.seed * 6) * 8, p.y - k * 70);
+        const sc = k < 0.15 ? 0.5 + (k / 0.15) * 0.7 : 1.2 - k * 0.3;
+        ctx.scale(sc, sc);
+        ctx.font = `28px ${FONT}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.text, 0, 0);
       } else if (p.kind === 'num') {
         const pop = k < 0.15 ? 0.6 + (k / 0.15) * 0.7 : 1.3 - Math.min(0.3, (k - 0.15));
         ctx.translate(p.x, p.y - k * 50);
@@ -967,6 +1174,7 @@ export class KarateClient {
     ctx.stroke();
     outlinedText(ctx, String(c), vw / 2, top + barH / 2, { size: mobile ? 20 : 26, fill: c <= 5 && s.ph === 'fight' ? '#ff4d3a' : '#ffffff', lw: 4 });
     outlinedText(ctx, `R${s.rd}`, vw / 2, top + barH + 18, { size: 12, fill: '#ffe14d', lw: 3 });
+    if (this.crowd.length) outlinedText(ctx, `👀 ${this.crowd.length}`, vw / 2, top + barH + 36, { size: 12, fill: '#ffffff', lw: 3 });
   }
 }
 

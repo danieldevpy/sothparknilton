@@ -1,9 +1,12 @@
 // Luta de Karatê (1x1) num dojo separado da praça — melhor de 3 rounds.
 // Fases: intro ("ROUND 1... LUTEM!") → fight → ko (comemoração) → intro... → fim.
-// Os dois lutadores somem da praça (pose 'dojo') e só eles recebem o estado da luta.
+// Os dois lutadores somem da praça (pose 'dojo') e só eles + a PLATEIA recebem o estado da luta.
+// Plateia (`watchers`): espectadores que entraram pelo prédio do Dojo. Só assistem e torcem
+// (reações com limite de frequência); nada do que mandam chega na simulação da luta.
 // Desistência (sair) = W.O. Mesma interface do GolAGol: has/handle/tick/forfeit/publicInfo.
 
 import { MSG } from '../../shared/constants.js';
+import { ARENA, CHEERS } from '../../shared/arena.js';
 import {
   KT, MOVES, ACTIONS, movePhase, isFree, clamp, clampArena, walkStep, dashVector,
   inReach, startPositions, staleMult,
@@ -29,6 +32,7 @@ export class KarateFight {
     this.timer = KT.INTRO_TIME;
     this.over = false;
     this.roundWinner = null;
+    this.watchers = new Map(); // playerId -> { side, seat, lastCheer }
 
     for (const pl of [a, b]) {
       pl.pose = 'dojo';
@@ -346,6 +350,7 @@ export class KarateFight {
       perfect: w.hp === KT.HP ? 1 : 0,
       wins: this.ids.map((id) => this.wins[id]),
     });
+    this.live();
   }
 
   afterRound() {
@@ -373,6 +378,7 @@ export class KarateFight {
       Object.assign(f, newFighter(id), pos[i], { mx, my, wantBlock });
     });
     this.event('round', { round: this.round, wins: this.ids.map((id) => this.wins[id]) });
+    this.live();
   }
 
   finish(winner, reason) {
@@ -435,7 +441,65 @@ export class KarateFight {
 
   publicInfo() {
     const [a, b] = this.ids;
-    return { id: this.id, a: { id: a, nick: this.nicks[a] }, b: { id: b, nick: this.nicks[b] } };
+    return { id: this.id, a: { id: a, nick: this.nicks[a] }, b: { id: b, nick: this.nicks[b] }, ...this.liveInfo() };
+  }
+
+  // placar + plateia (vai na lista "lutas ao vivo" do prédio do Dojo)
+  liveInfo() {
+    return {
+      rd: this.round,
+      wins: this.ids.map((id) => this.wins[id]),
+      w: [...this.watchers].map(([pid, v]) => [pid, v.side, v.seat]),
+    };
+  }
+
+  live() {
+    if (!this.over) this.room.broadcast({ t: MSG.KT_LIVE, id: this.id, ...this.liveInfo() });
+  }
+
+  // ---------- plateia ----------
+
+  // null = entrou; senão o motivo da recusa
+  addWatcher(p) {
+    if (this.over) return 'gone';
+    if (this.watchers.has(p.id)) return null;
+    if (this.watchers.size >= ARENA.MAX_WATCHERS) return 'full';
+    const taken = new Set([...this.watchers.values()].map((v) => v.seat));
+    let seat = 0;
+    while (taken.has(seat)) seat++;
+    this.watchers.set(p.id, { side: 0, seat, lastCheer: -1e9 });
+    const [a, b] = this.ids;
+    this.room.sendTo(p, {
+      t: MSG.KT_WATCH,
+      id: this.id,
+      a: { id: a, nick: this.nicks[a] },
+      b: { id: b, nick: this.nicks[b] },
+      ...this.liveInfo(),
+    });
+    this.live();
+    return null;
+  }
+
+  // reason: left | busy | gone (avisa o espectador) · quiet | switch (sem aviso)
+  removeWatcher(id, reason = 'left') {
+    if (!this.watchers.delete(id)) return;
+    const p = this.room.players.get(id);
+    if (p && reason !== 'quiet' && reason !== 'switch') this.room.sendTo(p, { t: MSG.KT_UNWATCH, id: this.id, reason });
+    this.live();
+  }
+
+  // torcida: reação (e, opcionalmente, escolher por quem torce). Não mexe na luta.
+  cheer(p, msg) {
+    const w = this.watchers.get(p.id);
+    if (!w || this.over || !Object.hasOwn(CHEERS, msg.r)) return;
+    const now = this.room.now();
+    if (now - w.lastCheer < ARENA.CHEER_COOLDOWN_MS) return;
+    w.lastCheer = now;
+    const side = msg.side === 0 || this.fighters.has(msg.side) ? msg.side : w.side;
+    const changed = side !== w.side;
+    w.side = side;
+    this.toArena({ t: MSG.KT_CHEER, by: p.id, r: msg.r, side });
+    if (changed) this.live();
   }
 
   state() {
@@ -455,16 +519,18 @@ export class KarateFight {
   }
 
   sendState() {
-    this.toFighters(this.state());
+    this.toArena(this.state());
   }
 
   event(kind, data = {}) {
-    this.toFighters({ t: MSG.KT_EVENT, kind, ...data });
+    this.toArena({ t: MSG.KT_EVENT, kind, ...data });
   }
 
-  toFighters(msg) {
+  // lutadores + plateia
+  toArena(msg) {
     const data = JSON.stringify(msg);
     for (const id of this.ids) this.room.players.get(id)?.send(data);
+    for (const id of this.watchers.keys()) this.room.players.get(id)?.send(data);
   }
 }
 

@@ -9,6 +9,7 @@ import { MAP, benchSeats } from '../shared/map.js';
 import { isWalkable, inLake, dist } from '../shared/geometry.js';
 import { PathGrid } from '../shared/pathfinding.js';
 import { GG } from '../shared/golagol.js';
+import { ARENA } from '../shared/arena.js';
 import { GolAGol } from './minigames/GolAGol.js';
 import { KarateFight } from './minigames/Karate.js';
 import { sanitizeNick, sanitizeChat, sanitizeLook } from '../shared/validation.js';
@@ -31,6 +32,7 @@ export class Room {
     this.resetBall();
     this.match = null; // partida de Gol a Gol em andamento (uma por vez no campinho)
     this.invites = new Map(); // `${from}>${to}` -> { from, to, at, rematch, game }
+    this.watching = new Map(); // playerId -> luta de Karatê que está assistindo (plateia do Dojo)
     this.fights = new Map(); // lutas de Karatê (várias ao mesmo tempo: cada uma no seu dojo)
     this.fightOf = new Map(); // playerId -> luta
     this.nextFightId = 1;
@@ -82,6 +84,7 @@ export class Room {
   removePlayer(id) {
     const p = this.players.get(id);
     if (!p) return;
+    this.unwatch(id, 'quiet');
     this.leaveSeat(p);
     if (this.match?.has(id)) this.match.forfeit(id);
     this.fightOf.get(id)?.forfeit(id);
@@ -140,7 +143,16 @@ export class Room {
         break;
       case MSG.KT_INPUT:
       case MSG.KT_ACT:
-        this.fightOf.get(id)?.handle(p, msg);
+        this.fightOf.get(id)?.handle(p, msg); // espectador não está em fightOf: ignorado
+        break;
+      case MSG.KT_WATCH:
+        this.watchFight(p, msg.id);
+        break;
+      case MSG.KT_UNWATCH:
+        this.unwatch(id, 'left');
+        break;
+      case MSG.KT_CHEER:
+        this.watching.get(id)?.cheer(p, msg);
         break;
       case MSG.CHAT:
         this.onChat(p, msg.text);
@@ -161,8 +173,9 @@ export class Room {
 
   // ---------- desafios (Gol a Gol / Karatê) ----------
 
+  // jogando, lutando ou na plateia do dojo (fora da praça)
   isBusy(id) {
-    return !!this.match?.has(id) || this.fightOf.has(id);
+    return !!this.match?.has(id) || this.fightOf.has(id) || this.watching.has(id);
   }
 
   onChallenge(p, msg) {
@@ -218,6 +231,7 @@ export class Room {
 
   startMatch(a, b) {
     for (const pl of [a, b]) {
+      this.unwatch(pl.id, 'busy');
       this.leaveSeat(pl);
       pl.pending = null;
       pl.path = [];
@@ -239,6 +253,7 @@ export class Room {
 
   startFight(a, b) {
     for (const pl of [a, b]) {
+      this.unwatch(pl.id, 'busy');
       this.leaveSeat(pl);
       pl.pending = null;
       pl.path = [];
@@ -259,6 +274,41 @@ export class Room {
       const pl = this.players.get(id);
       if (pl) pl.pose = '';
     }
+    // a plateia sai pela porta do dojo (o kt_end já avisou todo mundo)
+    for (const id of fight.watchers.keys()) {
+      this.watching.delete(id);
+      const pl = this.players.get(id);
+      if (pl) pl.pose = '';
+    }
+    fight.watchers.clear();
+  }
+
+  // ---------- plateia do Dojo ----------
+
+  watchFight(p, fightId) {
+    const fight = this.fights.get(fightId);
+    const refuse = (reason) => this.sendTo(p, { t: MSG.KT_UNWATCH, id: fightId, reason });
+    if (!fight || fight.over) return refuse('gone');
+    if (this.watching.get(p.id) === fight) return undefined;
+    if (this.match?.has(p.id) || this.fightOf.has(p.id)) return refuse('busy');
+    if (fight.watchers.size >= ARENA.MAX_WATCHERS) return refuse('full');
+    this.unwatch(p.id, 'switch'); // trocando de luta
+    this.leaveSeat(p);
+    // entra pela porta do Dojo: ao sair, reaparece lá
+    const door = this.map.dojo.door;
+    Object.assign(p, { x: door.x, y: door.y, dir: 1, path: [], pending: null, moving: false, vx: 0, vy: 0, pose: 'watch' });
+    this.watching.set(p.id, fight);
+    fight.addWatcher(p);
+    return undefined;
+  }
+
+  unwatch(id, reason = 'left') {
+    const fight = this.watching.get(id);
+    if (!fight) return;
+    this.watching.delete(id);
+    const p = this.players.get(id);
+    if (p) p.pose = '';
+    fight.removeWatcher(id, reason);
   }
 
   expireInvites() {

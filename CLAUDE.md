@@ -24,6 +24,7 @@ node scripts/golagol-balance.js 250 skill   # simula % de gol (equilíbrio)
 node scripts/ktbot.js                    # bot de Karatê (aceita desafios; estilos: mixed, jabber, kicker...)
 node scripts/ktbot.js SenseiBot SeuNick  # bot que te desafia pro karatê quando você entrar
 node scripts/karate-balance.js 40        # estilos de IA lutando entre si (equilíbrio dos golpes)
+node scripts/fanbot.js 4                 # 4 bots de torcida: entram na plateia do Dojo quando há luta
 ./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
 node scripts/netcheck.js ws://204.157.124.113:3000/ws   # mede ping/jitter/travadas contra um servidor
 ```
@@ -43,6 +44,10 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `shared/karate.js` | Constantes (`KT`), tabela de golpes (`MOVES`) e movimento, usados no servidor e na predição do cliente |
 | `client/js/minigames/karate.js` | Cliente do Karatê: cena do dojo, predição, controles teclado/toque, HUD de vida/dash, efeitos, sensei |
 | `client/js/render/fighter.js` / `dojo.js` | Lutador de quimono (poses dos golpes) e cenário do dojo, procedurais |
+| `shared/arena.js` | Plateia do Dojo: lotação, reações da torcida (`CHEERS`), ordem dos lugares |
+| `client/js/minigames/arena.js` | Prédio do Dojo na praça: lutas ao vivo, painel "👀 Assistir", notificação de luta começando |
+| `client/js/minigames/karate-watch.js` | Interface do espectador: AO VIVO, empolgação, locutor, torcida, outra luta, sair |
+| `client/js/render/dojohouse.js` / `crowd.js` | Prédio do Dojo (fechado/AO VIVO) e torcida dentro do dojo, procedurais |
 | `client/js/main.js` | Login (nick + visual), conexão, start |
 | `client/js/game.js` | Estado do cliente, interpolação, câmera, loop de render, hit-test |
 | `client/js/render/*` | Desenho procedural: `paint.js` (helpers), `character.js`, `world.js`, `bubbles.js`, `fx.js` |
@@ -80,6 +85,10 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 12. **Mobile**: toda UI nova precisa funcionar em `body.mobile` (retrato e paisagem) — teste com `?mobile=1` e viewport 375×812 / 812×375. Controles de toque novos vão em `mobile.js` (botões em `#m-actions` com `data-show`).
 
 ## Estado atual
+**Plateia do Dojo (branch `feature/arena`, 2026-10-03)**: o 3º prédio da praça é o **Dojo**: com luta rolando ele
+acende (AO VIVO) e o clique lista as lutas (`Nilton × Daniel — 👀 Assistir`); o espectador senta na plateia do dojo,
+torce (placas, reações, coro, ola) e ouve o locutor, **sem poder interferir**. Notificação pequena quando uma luta começa.
+
 **Karatê (branch `feature/karate`, 2026-10-01)**: minigame **Karatê 1x1** num **dojo separado** da praça
 (clique num player → 🥋 Desafiar: Karatê). Soco fraco/forte, chute fraco/forte com vantagens próprias, defesa
 (e defesa perfeita), dash a cada 3 s, melhor de 3 rounds, várias lutas simultâneas. Ver GAME_DESIGN.

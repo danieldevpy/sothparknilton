@@ -12,6 +12,7 @@ import { FxLayer } from './render/fx.js';
 import { outlinedText, roundRect, FONT } from './render/paint.js';
 import { play } from './audio.js';
 import { GolAGolClient } from './minigames/golagol.js';
+import { ArenaClient } from './minigames/arena.js';
 import { KarateClient } from './minigames/karate.js';
 
 const BUF_MAX = 12;
@@ -33,6 +34,7 @@ export class Game {
     this.cam = { x: 0, y: 0, z: 1, baseZ: 1, ready: false };
     this.shakeAmp = 0;
     this.shakeAt = 0;
+    this.arena = new ArenaClient(this, hud); // prédio do Dojo: lutas ao vivo + plateia (recebe msgs via kt)
     this.gg = new GolAGolClient(this, hud);
     this.kt = new KarateClient(this, hud);
     // atraso de interpolação da praça se adapta ao jitter da rede (ver jitter.js)
@@ -208,6 +210,11 @@ export class Game {
   }
 
   interact(hit) {
+    if (hit.id === 'dojo') {
+      this.arena.click();
+      play('click');
+      return;
+    }
     if (hit.id === 'player') {
       const p = this.players.get(hit.pid);
       if (!p) return;
@@ -263,6 +270,8 @@ export class Game {
     }
     const b = this.ballPos();
     if (b && Math.hypot(wx - b.x, wy - (b.y - 11)) < 22) return { id: 'ball', label: 'Bola — chutar', mx: b.x, my: b.y };
+    const dojo = this.arena.hitTest(wx, wy);
+    if (dojo) return dojo;
     for (const l of MAP.lamps) {
       if (Math.abs(wx - l.x) < 18 && wy > l.y - 122 && wy < l.y + 6) return { id: l.id, label: 'Poste — ligar/desligar', mx: l.x, my: l.y + 26 };
     }
@@ -414,6 +423,7 @@ export class Game {
     const oy = sk ? (Math.random() - 0.5) * sk * 2 : 0;
     ctx.setTransform(z, 0, 0, z, (-cam.x + ox) * z, (-cam.y + oy) * z);
     ctx.drawImage(this.bg, 0, 0);
+    this.arena.drawBuilding(ctx, now);
 
     if (this.dest) drawDestination(ctx, this.dest.x, this.dest.y, (now - this.dest.at) / 1000);
 
@@ -436,6 +446,7 @@ export class Game {
     for (const s of list) s.draw(ctx, t);
 
     this.gg.drawOverlay(ctx, now);
+    this.arena.drawOverlay(ctx, now);
     this.fx.draw(ctx, now);
     for (const p of this.players.values()) if (!this.kt.hidden(p.id)) this.drawNick(p);
 

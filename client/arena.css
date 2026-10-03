@@ -1,0 +1,162 @@
+/* ---------- Plateia do Dojo (assistir lutas de Karatê) ----------
+   #kt-watch, #dojo-panel e #kt-notes ficam fora do #hud (por cima do #m-ui no celular). */
+
+/* espectador não tem controles de luta */
+body.kt-watch #kt-help, body.kt-watch #kt-touch { display: none !important; }
+
+#kt-watch { position: fixed; inset: 0; z-index: 7; pointer-events: none; font-family: var(--font); }
+#kt-watch[hidden] { display: none; }
+#kt-watch button { font-family: inherit; pointer-events: auto; touch-action: manipulation; }
+
+/* letreiro de TV: AO VIVO · plateia · empolgação */
+.kw-top {
+  position: absolute; top: 96px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px; align-items: center; white-space: nowrap;
+}
+.kw-top > span {
+  background: rgba(20, 20, 30, .78); color: #fff; border: 2px solid var(--ink); border-radius: 999px;
+  padding: 3px 10px; font-weight: 700; font-size: 13px; box-shadow: 2px 2px 0 var(--ink);
+}
+.kw-live { background: var(--red) !important; display: inline-flex; align-items: center; gap: 6px; letter-spacing: .5px; }
+.kw-live i { width: 9px; height: 9px; border-radius: 50%; background: #fff; animation: kw-blink 1s steps(2) infinite; }
+@keyframes kw-blink { 50% { opacity: .2; } }
+.kw-hype { display: inline-flex; align-items: center; gap: 5px; }
+.kw-hype b {
+  display: block; width: 0; max-width: 64px; min-width: 2px; height: 8px; border-radius: 4px;
+  background: linear-gradient(90deg, #ffd23f, #ff6a3d); transition: width .25s;
+}
+.kw-hype::after { content: ''; }
+.kw-hype.hot { animation: kw-shake .25s infinite; }
+.kw-hype.hot small { filter: drop-shadow(0 0 4px #ffb347); }
+@keyframes kw-shake { 50% { transform: translateY(-1px) rotate(-2deg); } }
+
+/* locutor */
+.kw-caster {
+  position: absolute; top: 132px; left: 50%; transform: translateX(-50%); max-width: min(560px, calc(100vw - 24px));
+  background: rgba(20, 20, 30, .82); color: #ffe14d; border: 2px solid var(--ink); border-radius: 12px;
+  padding: 5px 12px; font-weight: 700; font-size: 15px; text-align: center; box-shadow: 3px 3px 0 var(--ink);
+}
+.kw-caster[hidden] { display: none; }
+.kw-caster.pop { animation: kw-pop .35s cubic-bezier(.3, 1.6, .6, 1); }
+@keyframes kw-pop { from { transform: translateX(-50%) scale(.6); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+
+/* barra de torcida */
+.kw-bar {
+  position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%);
+  display: flex; gap: 8px; align-items: stretch; justify-content: center; width: max-content; max-width: calc(100vw - 24px);
+}
+.kw-reacts { display: flex; gap: 6px; }
+.kw-bar button {
+  position: relative; border: 3px solid var(--ink); border-radius: 14px; box-shadow: 0 4px 0 var(--ink);
+  background: var(--paper); font-weight: 700; line-height: 1; cursor: pointer;
+}
+.kw-bar button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.kw-r { width: 54px; height: 50px; font-size: 24px; }
+.kw-go {
+  display: flex; align-items: center; gap: 6px; padding: 0 12px; height: 50px; font-size: 16px; color: #fff;
+  text-shadow: 1px 1px 0 var(--ink); max-width: 200px;
+}
+.kw-go b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kw-a { background: var(--red) !important; }
+.kw-b { background: var(--blue) !important; }
+.kw-bar kbd {
+  position: absolute; top: -9px; right: -7px; font-size: 10px; min-width: 16px; padding: 0 3px; border-width: 2px;
+  border-bottom-width: 3px; color: var(--ink); text-shadow: none;
+}
+#kt-watch.cool .kw-bar button { filter: saturate(.35) brightness(.92); }
+
+/* trocar de luta / sair */
+.kw-nav { position: absolute; top: 56px; right: 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.kw-nav button {
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 999px; padding: 5px 12px;
+  font-weight: 700; font-size: 14px; box-shadow: 3px 3px 0 var(--ink); cursor: pointer;
+}
+.kw-nav button[hidden] { display: none; }
+.kw-exit { background: var(--yellow) !important; }
+
+/* ---------- painel "lutas ao vivo" (clicar no prédio do Dojo) ---------- */
+#dojo-panel {
+  position: fixed; z-index: 8; top: 76px; left: 50%; transform: translateX(-50%);
+  width: min(430px, calc(100vw - 24px)); max-height: 70vh; overflow: auto;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 5px 5px 0 var(--ink);
+  padding: 10px 12px 8px; font-family: var(--font); animation: dp-in .3s cubic-bezier(.3, 1.6, .6, 1);
+}
+@keyframes dp-in { from { opacity: 0; scale: .85; } to { opacity: 1; scale: 1; } }
+#dojo-panel[hidden] { display: none; }
+.dp-head { display: flex; align-items: center; justify-content: space-between; font-size: 18px; margin-bottom: 6px; }
+.dp-x { border: none; background: none; font-size: 26px; line-height: 1; padding: 0 4px; cursor: pointer; }
+.dp-list { display: flex; flex-direction: column; gap: 8px; }
+.dp-row {
+  display: flex; align-items: center; gap: 10px; justify-content: space-between;
+  background: #fff6e6; border: 3px solid var(--ink); border-radius: 12px; padding: 8px 10px;
+}
+.dp-txt { min-width: 0; }
+.dp-vs { display: flex; align-items: center; gap: 6px; font-size: 17px; flex-wrap: wrap; }
+.dp-fighter { display: inline-flex; align-items: center; gap: 4px; }
+.dp-fighter i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); background: #ccc; flex: none; }
+.dp-fighter.a b { color: #c0321f; }
+.dp-fighter.b b { color: #2a55b5; }
+.dp-x-sign { font-weight: 700; color: #8a6a4a; }
+.dp-info { font-size: 13px; font-weight: 700; color: #6a5a4a; margin-top: 2px; }
+.dp-watch {
+  flex: none; background: var(--red); color: #fff; text-shadow: 1px 1px 0 var(--ink); font-weight: 700; font-size: 15px;
+  border: 3px solid var(--ink); border-radius: 12px; padding: 8px 12px; box-shadow: 2px 2px 0 var(--ink); cursor: pointer;
+}
+.dp-watch:disabled { background: #bbb; cursor: default; }
+.dp-empty { text-align: center; font-weight: 700; margin: 10px 0; }
+.dp-tip { font-size: 12px; font-weight: 700; color: #7a6a5a; text-align: center; margin: 8px 0 2px; }
+
+/* ---------- notificação pequena: "fulano × ciclano vão lutar" ---------- */
+#kt-notes {
+  position: fixed; z-index: 8; top: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; font-family: var(--font);
+}
+body.kt-on #kt-notes { top: auto; bottom: 128px; }
+.kt-note {
+  position: relative; overflow: hidden; pointer-events: auto; display: flex; align-items: center; gap: 8px;
+  background: rgba(255, 253, 246, .96); border: 2px solid var(--ink); border-radius: 999px; box-shadow: 2px 2px 0 var(--ink);
+  padding: 3px 4px 3px 11px; font-size: 13px; max-width: calc(100vw - 24px); animation: kn-in .35s cubic-bezier(.3, 1.6, .6, 1);
+}
+.kn-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.kn-sub { color: #6a5a4a; }
+.kn-watch {
+  flex: none; background: var(--red); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 2px 9px;
+  font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer; text-shadow: 1px 1px 0 var(--ink);
+}
+.kn-timer { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--red); transform-origin: left; animation: kn-time linear forwards; }
+@keyframes kn-in { from { transform: translateY(-14px) scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes kn-time { to { transform: scaleX(0); } }
+
+/* ---------- celular (body.mobile): retrato e paisagem ---------- */
+body.mobile #kt-watch, body.mobile #dojo-panel, body.mobile #kt-notes { font-family: var(--m-font); }
+body.mobile .kw-top { top: calc(116px + var(--sat)); }
+body.mobile .kw-caster { top: calc(146px + var(--sat)); font-size: 13px; }
+body.mobile .kw-nav { top: calc(10px + var(--sat)); right: calc(10px + var(--sar)); flex-direction: row; }
+body.mobile .kw-nav button {
+  background: var(--m-glass) !important; color: #fff; border: 2px solid var(--m-glass-border); border-radius: 15px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .25); padding: 0 12px; height: 48px; font-size: 15px;
+}
+body.mobile .kw-bar { bottom: calc(12px + var(--sab)); }
+body.mobile .kw-bar kbd { display: none; }
+body.mobile .kw-r { width: 56px; height: 56px; font-size: 26px; }
+body.mobile .kw-go { height: 56px; }
+@media (orientation: portrait) {
+  body.mobile .kw-bar { flex-wrap: wrap; width: calc(100vw - 20px); }
+  body.mobile .kw-go { flex: 1 1 40%; justify-content: center; max-width: none; }
+  body.mobile .kw-reacts { order: 3; width: 100%; justify-content: center; }
+  body.mobile .kw-a { order: 1; }
+  body.mobile .kw-b { order: 2; }
+}
+@media (orientation: landscape) {
+  body.mobile .kw-top { top: calc(96px + var(--sat)); }
+  body.mobile .kw-caster { top: calc(124px + var(--sat)); }
+  body.mobile .kw-go { max-width: 150px; }
+}
+body.mobile #dojo-panel {
+  top: auto; bottom: calc(10px + var(--sab)); left: calc(10px + var(--sal)); right: calc(10px + var(--sar));
+  width: auto; transform: none; max-height: 62dvh;
+}
+body.mobile .dp-watch { padding: 12px 14px; font-size: 16px; border-radius: 14px; }
+body.mobile #kt-notes { top: calc(66px + var(--sat)); }
+body.mobile.kt-on #kt-notes { top: auto; bottom: calc(150px + var(--sab)); }
+body.mobile .kn-watch { padding: 5px 11px; font-size: 13px; }

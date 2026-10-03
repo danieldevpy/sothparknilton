@@ -74,8 +74,13 @@ export const MSG = {
   KT_INPUT: 'kt_input', // c->s {mx, my, block}
   KT_ACT: 'kt_act', // c->s {a: jab|punch|kick|hkick|dash, dx?, dy?}
   KT_START: 'kt_start', // s->todos {id, a:{id,nick}, b:{id,nick}}
-  KT_STATE: 'kt_state', // s->lutadores, 30x/s
-  KT_EVENT: 'kt_event', // s->lutadores {kind, ...}
+  KT_STATE: 'kt_state', // s->lutadores + plateia, 30x/s
+  KT_EVENT: 'kt_event', // s->lutadores + plateia {kind, ...}
+  // plateia do Dojo (ver shared/arena.js): espectador assiste e torce, sem interferir
+  KT_WATCH: 'kt_watch', // c->s {id} entra na plateia | s->c {id, a, b, rd, wins, w} confirmação
+  KT_UNWATCH: 'kt_unwatch', // c->s {} sai | s->c {id, reason: left|busy|gone|full}
+  KT_CHEER: 'kt_cheer', // c->s {r, side?} | s->lutadores + plateia {by, r, side}
+  KT_LIVE: 'kt_live', // s->todos {id, rd, wins, w:[[pid, side, seat]]} placar/plateia mudou
   KT_END: 'kt_end', // s->todos {winner, loser, reason, score}
 };
 

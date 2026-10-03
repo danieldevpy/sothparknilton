@@ -48,8 +48,15 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - ✅ T-323 Cliente: cena do dojo + sensei, lutador de quimono com poses, predição, HUD de vida/rounds/dash, efeitos, controles teclado e toque
 - ✅ T-324 `ktbot.js`, `karate-ai.js`, `karate-balance.js`, 17 testes
 
+## Fase 1E — Plateia do Dojo ✅ (branch feature/arena, 2026-10-03)
+- ✅ T-325 Assistir luta: prédio do Dojo na praça (fechado/AO VIVO), painel de lutas ao vivo, entrar na plateia, trocar de luta, sair
+- ✅ T-330 Torcida: plateia sentada no dojo (bonecos reais), placas por lado, reações 👏🔥😱😂, coro, ola, pipoca, locutor
+- ✅ T-331 Notificação pequena "fulano × ciclano vão lutar — 👀 Assistir"
+- ✅ T-332 Espectador não interfere (comandos ignorados, torcida limitada, desenho fora do tatame) + 7 testes + `scripts/fanbot.js`
+- 🔜 T-333 Plateia do Gol a Gol na arquibancada (mesma ideia da T-313) e "replay" do K.O. para a plateia
+- 🔜 T-334 Estatísticas de torcida (quem mais torceu, "torcedor da noite")
+
 ## Fase 1D — Karatê: próximos 🔜
-- 🔜 T-325 Assistir luta (espectador entra no dojo pelo cartão do lutador)
 - 🔜 T-326 Faixas (branca → preta) por vitórias, persistidas
 - 🔜 T-327 Golpe especial com barra de "ki" (enche ao apanhar/defender)
 - 🔜 T-328 Escolher o dojo/cenário e um "ring-out" na beira do tatame

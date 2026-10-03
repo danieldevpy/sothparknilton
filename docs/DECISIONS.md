@@ -89,3 +89,9 @@ Latência real até a VPS variou 15–195 ms (jitter de Wi-Fi). Atraso fixo de i
 `AdaptiveDelay` ajusta por conexão. Predição do Karatê considera o RTT. Queda de rede/deploy reconecta sozinho
 (recarrega e refaz o login com o perfil salvo) — resolve o essencial da T-101 sem sessão no servidor.
 
+**D-021 — Plateia do Dojo: espectador entra na mesma instância da luta, mas só recebe.** (2026-10-03)
+Opções: (a) transmitir a luta para a praça (todos recebem estado), (b) plateia dentro da luta. Escolhida (b): banda só
+para quem quer assistir, o espectador vira parte da cena (sentado na plateia, visto pelos lutadores) e o isolamento é
+natural — comandos de luta são aceitos só de `fightOf`. Torcida limitada (1 a cada 0,7 s, 24 lugares) e desenhada fora
+do tatame para não atrapalhar. Entrar só pelo prédio do Dojo (ou pela notificação) e só com luta rolando; o espectador
+"está" na porta do Dojo (sai por lá). Sem mudar `KT`/`MOVES` (mecânica intacta).

@@ -82,6 +82,9 @@ const SOUNDS = {
   kt_dash: () => { noise({ dur: 0.16, vol: 0.09, freq: 5000 }); tone({ type: 'sine', from: 300, to: 900, dur: 0.12, vol: 0.04 }); },
   kt_down: () => { tone({ type: 'sine', from: 90, to: 38, dur: 0.35, vol: 0.3 }); noise({ dur: 0.3, vol: 0.14, freq: 500 }); },
   kt_gong: () => { [110, 166, 222].forEach((f, i) => tone({ type: 'sine', from: f, to: f * 0.98, dur: 2.2, vol: 0.13 - i * 0.03 })); noise({ dur: 0.35, vol: 0.08, freq: 900 }); },
+  // plateia do Dojo
+  kt_cheer: () => { noise({ dur: 0.5, vol: 0.06, freq: 1600 }); noise({ dur: 0.35, vol: 0.04, freq: 3200, delay: 0.08 }); },
+  kt_notify: () => { tone({ type: 'triangle', from: 660, dur: 0.07, vol: 0.04 }); tone({ type: 'triangle', from: 990, dur: 0.1, vol: 0.04, delay: 0.08 }); },
 };
 
 export function play(name) {

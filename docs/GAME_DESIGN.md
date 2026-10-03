@@ -27,7 +27,7 @@ Minigames chegam depois, aproveitando as áreas do mapa.
 | Praça (centro) | Fonte, 4 bancos, 4 postes, placa | Moeda na fonte (brilho + "plim"), sentar, ligar/desligar poste |
 | Lago (oeste) | Lago com gelo na margem, píer, 3 patos, banco | Pedra no lago (splash + ondas), quack nos patos |
 | Área de Sports (leste) | Campinho, 2 gols, arquibancada com placar, poste | Bola física compartilhada, gols, placar global |
-| Topo (não andável) | Montanhas, pinheiros, 3 casas | — |
+| Topo (não andável) | Montanhas, pinheiros, 2 casas e o **prédio do Dojo** | Clicar no Dojo: lutas de karatê ao vivo → assistir |
 
 ## Chat
 - Balões no estilo Habbo: aparecem sobre quem fala, empurram os anteriores para cima e sobem devagar até sumir (~28 s).
@@ -83,7 +83,8 @@ Duelo 1x1 no campinho da Área de Sports. Cada um defende um gol e eles **altern
 ## Minigame 2 — Karatê 🥋
 Luta 1x1 **longe da praça**: ao aceitar o desafio, os dois somem da praça e vão para o **Nilton Dojo** (tatame,
 estandarte, lanternas, gongo e um sensei velhinho que comenta a luta). **Melhor de 3 rounds**, 45 s cada, 100 de vida.
-Várias lutas podem acontecer ao mesmo tempo (cada uma no seu dojo). Quem fica na praça só vê o resultado no chat.
+Várias lutas podem acontecer ao mesmo tempo (cada uma no seu dojo). Quem fica na praça vê o resultado no chat — ou
+entra pelo **prédio do Dojo** para assistir (ver *Plateia do Dojo* abaixo).
 
 **Como começar**: clique num player → cartão → "🥋 Desafiar: Karatê" (convite 20 s, revanche no fim igual ao Gol a Gol).
 
@@ -115,6 +116,34 @@ No celular: joystick + 4 botões de golpe + dash (com recarga visível) + defesa
 **Equilíbrio** (`scripts/karate-balance.js 40`, IAs com 0,2 s de reação): o estilo misto vence só-soco-forte 98%,
 só-chute-forte 85%, só-defesa 100%, só-chute-fraco 95% e empata com só-soco-fraco (~50%); entre misto x misto o dano
 fica dividido entre os 4 golpes (20–32% cada).
+
+### Plateia do Dojo 👀 (assistir lutas)
+O 3º prédio da fileira de casas virou o **Dojo** (telhado de pagode, placa 道場, lanternas de pedra). Ele mostra se tem luta:
+- **Sem luta**: portas fechadas, placa **FECHADO** balançando, janelas apagadas, "zzz" saindo do telhado. Clicar só avisa
+  "Dojo fechado" — **só dá para entrar se houver luta**.
+- **Com luta**: letreiro **AO VIVO** piscando, lanternas acesas, cortina (noren) balançando, **teatro de sombras** de dois
+  bonequinhos lutando atrás das janelas de papel, onomatopeias (POW! KIAI! BAM!) saindo do prédio e um selo flutuante
+  "🥋 2 lutas ao vivo · 👀 5". Quem entra solta um "👀 Fulano entrou" na porta.
+- **Clique** → painel "lutas ao vivo": uma linha por luta (`Nilton × Daniel · Round 2 · 1×0 · 👀 3` + **👀 Assistir**).
+- **Notificação pequena** quando duas pessoas começam a lutar ("🥋 Nilton × Daniel vão lutar! 👀 Assistir"), some em 6,5 s.
+  Não aparece para quem está lutando.
+
+**Na plateia** o espectador vai para a mesma cena do dojo, **sentado de verdade na plateia** (o próprio boneco, com o
+visual da praça, numa almofada atrás do tatame; 12 lugares na fila de trás + 12 na fila da frente, de costas para a
+câmera). Os lutadores também veem a torcida. O espectador tem:
+- **Torcida**: 📣 *Vai Fulano!* (escolhe o lado: o boneco segura uma **placa** com o nome, vermelha/azul como as barras de
+  vida), 👏 🔥 😱 😂 (teclas 1–6). O boneco pula/acena/dança e o emoji sobe da plateia. Emotes da praça também animam o boneco.
+- **Coro**: 2+ pessoas mandando "Vai" para o mesmo lado → "NIL-TON! NIL-TON!" em cima da plateia.
+- **Empolgação** (🔥 medidor): sobe com torcida e golpes fortes; alta → a plateia faz **ola**. Alguns comem **pipoca** 🍿.
+- **Locutor** 🎙️ (só para a plateia; os lutadores continuam com o sensei): narra contra-ataques, chutaços, combos,
+  defesas perfeitas, K.O., "PERFEITO!", W.O.
+- **⇄ Outra luta** (N) quando há várias e **🚪 Sair do dojo** (Esc) — reaparece na porta do Dojo na praça.
+- Fim da luta: "🏆 Fulano VENCEU!", 3,6 s de comemoração e volta sozinho para a praça.
+
+**Não atrapalha**: o servidor ignora qualquer comando de luta vindo da plateia; torcida tem limite (1 a cada 0,7 s);
+tudo da torcida é desenhado **fora do tatame** (atrás e na borda de baixo); chat da plateia vira balãozinho curto em
+cima do lugar dela; o coro fica baixo, longe das barras de vida. Quem está na plateia não pode ser desafiado (está
+"ocupado") e não anda na praça. Lotação: 24 por luta.
 
 ## Futuro (ver ROADMAP)
 Minigames por área: corrida no gelo do lago, pênalti/futebol por times na área de sports, "pega-pega" na praça.

@@ -99,6 +99,24 @@
 - **UI**: `#kt-ui` (ajuda de golpes no desktop, controles de toque no celular) é filho do `body` com z-index acima do
   `#m-ui`; `body.kt-on` esconde o que é da praça.
 
+### Plateia do Dojo (espectadores)
+```
+ praça: ArenaClient (client/js/minigames/arena.js) ── lista de lutas (welcome.fights / kt_start / kt_live / kt_end)
+   prédio do Dojo (render/dojohouse.js: fixo no fundo + parte viva) · painel "lutas ao vivo" · notificação kt_start
+   clique "Assistir" ──▶ kt_watch{id} ──▶ Room.watchFight(): room.watching(pid → luta), pose 'watch', posição = porta
+                                          KarateFight.addWatcher(): lugar (seat), kt_watch (ack) + kt_live p/ todos
+ luta: KarateFight.toArena() = kt_state/kt_event/kt_cheer para os 2 lutadores + watchers
+ cliente: KarateClient role 'watch' → os dois interpolados (sem previsão), sem controles, WatchUi (karate-watch.js),
+          torcida desenhada por render/crowd.js (também para os lutadores)
+ saída: kt_unwatch (pediu) · startFight/startMatch (foi jogar: reason busy) · endFight (kt_end: watchers liberados)
+        · removePlayer (fechou o jogo) — em todos os casos pose '' e reaparece na porta do Dojo
+```
+- **Isolamento**: espectador não está em `fightOf` → `kt_input`/`kt_act` dele são ignorados; `kt_cheer` só mexe em
+  `watchers` (lado + limite de 0,7 s) e é repassado. `isBusy()` inclui a plateia (não anda/interage/é desafiado na praça).
+- **Lugares** (`seat`) são decididos no servidor (primeiro livre) para todos verem a mesma plateia; o cliente mapeia
+  `seat` → posição (`seatOrder`: do meio para as pontas na fila de trás).
+- **Banda**: cada espectador custa o mesmo que um lutador (30 `kt_state`/s). Lotação 24 por luta (`ARENA.MAX_WATCHERS`).
+
 ## Performance (MVP)
 - Render ~0,5 ms/frame em desktop (medido com 1–3 players).
 - Rede: snapshot ≈ 25 bytes/player × 15 Hz. Para 100 players ≈ 37 KB/s por cliente — ok para MVP; ver ROADMAP (delta/área de interesse) para escalar.

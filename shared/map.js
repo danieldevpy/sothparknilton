@@ -5,7 +5,7 @@
 const trees = [
   [80, 200], [180, 170], [60, 820], [110, 980], [70, 1180], [240, 1230],
   [130, 300], [760, 1220], [560, 1180], [1240, 1210], [1950, 1150], [1990, 600],
-  [1960, 280], [1270, 1000], [700, 1050], [1270, 300], [60, 560], [1985, 980],
+  [1960, 280], [1270, 1000], [700, 1050], [1165, 300], [60, 560], [1985, 980],
   [450, 1230], [1550, 1210], [1750, 1230], [1880, 1235],
 ];
 
@@ -36,8 +36,11 @@ export const MAP = {
   houses: [
     { x: 560, y: 120, w: 200, h: 150, color: '#e9c46a', roof: '#9b2c2c' },
     { x: 880, y: 100, w: 240, h: 170, color: '#d98c5f', roof: '#3f4a5a' },
-    { x: 1240, y: 120, w: 200, h: 150, color: '#8fbf9f', roof: '#7a3b1e' },
   ],
+
+  // Prédio do Dojo de Karatê na fileira de casas: clicar mostra as lutas ao vivo e leva
+  // para a plateia. `door` = onde o espectador "está" na praça (e reaparece ao sair).
+  dojo: { id: 'dojo', x: 1230, y: 100, w: 230, h: 170, door: { x: 1345, y: 318 } },
 
   fountain: { id: 'fountain', x: 1000, y: 640, r: 92, interact: { x: 1000, y: 760 } },
 

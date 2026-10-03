@@ -3,6 +3,29 @@
 Diário de desenvolvimento. Entrada nova **no topo**. Formato:
 `## AAAA-MM-DD — título` · o que foi feito · decisões · pendências.
 
+## 2026-10-03 — Plateia do Dojo: assistir lutas de Karatê 👀 (branch `feature/arena`, worktree separado)
+Feito em paralelo ao chat de voz (`feature/voice`), sem mexer na mecânica da luta (`KT`/`MOVES` intactos).
+
+**Feito**
+- Mapa: a 3ª casa virou o **prédio do Dojo** (`MAP.dojo`, porta andável em 1345,318); um pinheiro saiu da frente.
+- Servidor: `room.watching`, `watchFight`/`unwatch` (entrar/sair/trocar, recusas `gone/full/busy`, limpeza no fim da
+  luta, ao ir jogar e ao sair do jogo); `KarateFight.watchers` com lugares, `toArena` (estado/eventos para a plateia),
+  `cheer` (limite 0,7 s, lado válido) e `kt_live` para todos. `shared/arena.js` (lotação 24, reações, ordem dos lugares).
+- Cliente: `minigames/arena.js` (lista de lutas, clique no prédio, painel, notificação), `render/dojohouse.js` (prédio
+  fechado/AO VIVO com teatro de sombras e onomatopeias), `render/crowd.js` (torcida: bonecos reais sentados, placas,
+  pipoca, ola, coro, fila da frente de costas), `minigames/karate-watch.js` (letreiro AO VIVO, empolgação, locutor,
+  reações, outra luta, sair), `KarateClient` com papel `watch`, `arena.css`, sons `kt_cheer`/`kt_notify`.
+- `scripts/fanbot.js`: bots que entram na plateia e torcem. 7 testes novos (`tests/arena.test.js`), 57 no total.
+
+**Verificado no navegador** (porta 3100, bots `ktbot` lutando + `fanbot`): dojo fechado/aberto, painel com 2 lutas,
+notificação, entrar, torcer (teclas e botões, placa e coro), ola com empolgação alta, trocar de luta, sair (reaparece na
+porta), fim por W.O. visto da plateia, visão do lutador com torcida, celular retrato 375×812 e paisagem 812×375
+(câmera da plateia abre um pouco para a fila de trás aparecer sob as barras). Console sem erros.
+
+**Merge**: o branch de voz mexe nas mesmas áreas de `Room.js`/`constants.js`; as inserções daqui foram postas em linhas
+diferentes (import, construtor, `removePlayer`, `switch`) para o merge ser limpo. Docs (DEVLOG/ROADMAP/DECISIONS/CLAUDE.md)
+podem conflitar só por serem entradas novas no mesmo lugar — manter as duas. D-021 pode precisar ser renumerada.
+
 ## 2026-10-01 — v0.3.0: versão mobile web (estilo Roblox)
 **Feito**
 - `client/js/mobile.js`: barra de ícones (☰ 💬 👥), painéis recolhíveis, joystick virtual, botões PULAR/😜 e grade de emotes,
