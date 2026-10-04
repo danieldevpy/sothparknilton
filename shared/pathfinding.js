@@ -124,6 +124,25 @@ export class PathGrid {
   }
 }
 
+// Anda `budget` px ao longo de `path` (consumindo os waypoints alcançados). Mesmo passo no
+// servidor (Room.stepPlayer) e na predição do próprio boneco no cliente (lagcomp.js).
+export function followPath(p, path, budget) {
+  while (budget > 0 && path.length) {
+    const t = path[0];
+    const d = Math.hypot(t.x - p.x, t.y - p.y);
+    if (d <= budget) {
+      p.x = t.x;
+      p.y = t.y;
+      budget -= d;
+      path.shift();
+    } else {
+      p.x += ((t.x - p.x) / d) * budget;
+      p.y += ((t.y - p.y) / d) * budget;
+      budget = 0;
+    }
+  }
+}
+
 // String-pulling: remove waypoints intermediários quando há linha de visão.
 function smooth(sx, sy, pts) {
   const out = [];

@@ -39,6 +39,10 @@ docker compose down               # tirar do ar
 - **Extrapolação curta**: se a rede engasgar e o buffer esvaziar, quem estava andando continua por até 100–120 ms
   em vez de congelar.
 - **Ping** na tela (📶 verde < 90 ms, amarelo < 180 ms, vermelho), via `ping`/`pong` a cada 2 s.
+- **Compensação de lag na praça** (`client/js/lagcomp.js`, D-030): com a mediana dos últimos 5 pings ≥ 100 ms (~10 s
+  de ping alto, não um pico), o próprio boneco passa a andar na hora do clique/teclado/joystick (mesmo A* do servidor) e
+  converge para o servidor quando para; desliga com a mediana < 70 ms. Aparece 🛟 no ping e um aviso no chat.
+  Testar sem depender da rede: `?lag=300&jit=40` (soma ping/jitter no cliente) e `?comp=1` / `?comp=0` (força o modo).
 - **Predição do Karatê** usa o ping: não "puxa" o lutador de volta por causa da latência e não repete a animação do golpe.
 - **Reconexão automática**: queda de rede ou deploy → recarrega e entra de novo sozinho (até 8 tentativas a cada 3 s).
 - **Vigia de carregamento** (`index.html`): troca Wi-Fi/4G no meio do carregamento (`ERR_NETWORK_CHANGED`) → recarrega
@@ -59,6 +63,13 @@ Medições de 2026-10-02:
 |---|---|---|---|
 | Dentro da VPS (servidor isolado) | 1 ms | 4 ms | 0% — servidor envia certinho |
 | PC no Wi-Fi de casa (55% de perda até o roteador!) | 46 ms mediana, picos de 6 s | 67 ms | 37% — culpa do Wi-Fi, não do jogo |
+| 2026-10-04, PC no Wi-Fi | 30 ms mediana, p95 47, máx 132 | 6 ms | 0,7% |
+| 2026-10-04, dentro da VPS | 2 ms mediana, p95 5 | 10 ms | 0% |
+
+Diagnóstico de 2026-10-04 (queixa de lag): o piso PC → VPS é ~26 ms (ICMP mínimo) — a rota do provedor já leva 15–23 ms
+no 1º salto (com 5% de perda) e o Wi-Fi soma ~9 ms em média (máx. 21) até o roteador. A VPS não é a causa: o jogo usa
+~2% de CPU; o host tem *steal* médio ~2% (rajadas de 17%) e um stack de monitoramento de terceiros ocupado, que só gera
+alguns ms de oscilação.
 
 Simulação (`AdaptiveDelay` vs. atraso fixo, % de quadros com buffer vazio): karatê em 4G ruim 13,7% → 3,1%;
 praça em 4G ruim 4,6% → 1,1%; Wi-Fi ruim 25,9% → 12% (o resto é coberto pela extrapolação curta).

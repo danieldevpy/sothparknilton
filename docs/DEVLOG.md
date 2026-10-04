@@ -26,7 +26,8 @@ mais uma "room" no mapa e um ambiente para testar em produção. Feito em parale
   `quiz.css` (desktop + celular), poses `qzhand/qzhit/qzwin` e antena de robô no boneco, sons `qz_*`, botão
   "📚 Chamar p/ Quiz" no cartão do player.
 - Ferramentas: `scripts/quiz-balance.js` (simulador com o Room real; `QZ.X=valor` testa variações), `scripts/qzbot.js`
-  (bots pela rede: correm chutando e aprendendo, ou `--assistir`). 16 testes novos (`tests/quiz.test.js`), 104 no total.
+  (bots pela rede: correm chutando e aprendendo, ou `--assistir`). 17 testes novos (16 em `tests/quiz.test.js` + 1 pela
+  rede em `server.test.js`), 111 no total depois do merge com a v0.7.1 (compensação de lag).
   Decisões D-031..D-034, `docs/QUIZ_CONTENT.md`.
 
 **Achados no caminho**: viés de 59% para quem criou a sala (empate do sorteio de cartas na largada contava o 1º como
@@ -40,6 +41,27 @@ criar sala, robôs, contagem, perguntas de várias categorias, responder por cli
 marcou o quê, pulinhos, ESCUDO/BLOQUEOU, pergunta de ouro, nuvem do pum, pódio + revisão, nova corrida, plateia
 (banco, palpite, torcida, "VAI DANIEL!"), quero correr no meio (entrou na largada), ausente indo para a plateia, convite
 pelo cartão (sala nova para os dois), celular 375×812 e 812×375. Console e servidor sem erros.
+
+## 2026-10-04 — v0.7.1: investigação de lag na VPS + compensação de lag na praça (T-406)
+Pedido: o jogo parecia com lag e o ping direto na VPS dava picos (esperava ~15 ms). Depois: "corrigir quando o ping
+ficar alto constantemente".
+
+**Diagnóstico** (ver DEPLOY → Medir a rede): piso PC → VPS ~26 ms pela rota do provedor (1º salto já 15–23 ms, 5% de
+perda); Wi-Fi soma ~9 ms médios e picos de 21 ms; dentro da VPS o jogo responde em 2 ms. A VPS não é a causa (jogo
+~2% CPU; steal ~2% com rajadas de 17%, monitoramento de terceiros ocupado — não mexemos).
+
+**Feito**
+- `client/js/lagcomp.js`: `LagMonitor` (mediana de 5 pings, liga ≥ 100 ms / desliga < 70 ms) e `SelfPredictor`
+  (anda na hora com o mesmo A*/passo do servidor, converge parado, teleporta se divergir muito).
+- `shared/pathfinding.js`: `followPath` extraído de `Room.stepPlayer` (servidor e cliente andam igual).
+- `game.js`: `steerTo`/`movePos`/`predicting`; clique, interações, teclado (`input.js`) e joystick (`mobile.js`) usam a
+  previsão; sentar no chão para a previsão. HUD: 🛟 no ping + aviso no chat quando liga/desliga.
+- `net.js`: `?lag=` / `?jit=` simulam internet ruim; `?comp=1/0` força o modo.
+- 6 testes novos (`tests/lagcomp.test.js`), 94 no total — inclui previsão idêntica ao `Room` tick a tick.
+
+**Verificado no navegador** (porta 3100, `?lag=300&jit=40`): liga sozinho em ~10 s (mediana 345 ms); clique → boneco
+anda em 35–50 ms (sem: 480–550 ms), velocidade máx. ~205 px/s (sem teleporte), erro final 0 px; teclado 26 ms; banco
+(senta no assento do servidor) e levantar ok; mobile 375×812 com joystick ~100 ms; console sem erros.
 
 ## 2026-10-03 — v0.7.0: Queimada no Ginásio 🔴🔵 (feita no worktree `feature/queimada`)
 Pedido: implementar a queimada desenhada com outro modelo (pegada, arremesso, defesa, caos, fila/squad, modos de

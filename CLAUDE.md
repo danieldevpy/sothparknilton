@@ -31,6 +31,7 @@ node scripts/qzbot.js 3                  # 3 bots na Corrida das Perguntas (Esco
 node scripts/quiz-balance.js 300 normal 14   # simula corridas do quiz (habilidade, quem entra atrasado, combo ligado × desligado)
 ./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
 node scripts/netcheck.js ws://204.157.124.113:3000/ws   # mede ping/jitter/travadas contra um servidor
+# http://localhost:3000/?lag=300&jit=40   → simula internet ruim no cliente (?comp=1/0 força a compensação de lag)
 node scripts/voice-e2e.mjs               # E2E do chat de voz (Chrome headless + mic falso; precisa `npm i --no-save puppeteer`)
 ssh -t -p 45392 daniel@204.157.124.113 'sudo bash ~/servers/niltonpark/scripts/setup-domain.sh'   # domínio + HTTPS (1 vez)
 ```
@@ -68,6 +69,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/render/*` | Desenho procedural: `paint.js` (helpers), `character.js`, `world.js`, `bubbles.js`, `fx.js` |
 | `client/js/hud.js` / `input.js` / `audio.js` | Interface DOM, controles, sons sintetizados |
 | `client/js/jitter.js` | Atraso de interpolação adaptativo ao jitter da rede (praça, Gol a Gol, Karatê) |
+| `client/js/lagcomp.js` | Compensação de lag na praça: liga com ping alto constante e prevê o próprio boneco (D-030) |
 | `Dockerfile` / `compose.yml` / `scripts/deploy.sh` | Produção na VPS: jogo + TURN do chat de voz (coturn) — ver `docs/DEPLOY.md` |
 | `server/VoiceHub.js` | Chat de voz: grupos, convites/pedidos para entrar, mudo, repasse da sinalização WebRTC, credenciais TURN (`room.voice`) |
 | `shared/voice.js` | Constantes (`VOICE`), textos de status, validação da sinalização, ajuste do Opus no SDP |
@@ -117,6 +119,9 @@ expressões, phrasal verbs...). Todo mundo responde a mesma pergunta; acertou = 
 sua frente volta 1** (liderando: escudo de 1 pergunta); ⭐ ouro a cada 5 vale 2; 🎁 dá cartas (🤫 Cola, 💨 Pum, 🎲 Tudo
 ou nada); robôs para treinar sozinho; entrou no meio = começa da largada; plateia com palpite e torcida; pódio com
 revisão das erradas. Ver GAME_DESIGN, QUIZ_CONTENT e D-031..D-034.
+
+**v0.7.1 — Compensação de lag (2026-10-04)**: com ping alto constante (mediana ≥ 100 ms), o próprio boneco na praça
+anda na hora do clique e converge para o servidor (🛟 no ping). Testar com `?lag=300&jit=40` / `?comp=1`. Ver D-030.
 
 **v0.7.0 — Queimada no Ginásio (2026-10-03)**: novo prédio na praça (à esquerda, em cima do lago). Clique → lista
 de quadras (▶ Entrar) ou ➕ Nova partida (Fácil/Difícil); ou cartão do player → 🔴🔵 Chamar p/ Queimada. Fila

@@ -36,6 +36,11 @@
 - `main.js` — tela de login (nick + cores, preview animado), conecta, troca para o jogo ao receber `welcome`.
 - `game.js`
   - Guarda players com **buffer de snapshots** (`buf`) e renderiza com `INTERP_DELAY_MS` (110 ms) de atraso, interpolando entre amostras → movimento suave mesmo com 15 Hz.
+  - **Compensação de lag** (`lagcomp.js`): `LagMonitor` liga quando a mediana dos últimos 5 pings fica ≥ 100 ms (desliga
+    < 70 ms); aí o próprio boneco na praça vira `SelfPredictor` — `moveTo`/`steerTo`/`interact` já calculam o caminho com
+    o mesmo `PathGrid` e andam com o mesmo `followPath` do servidor; parado, converge para o último snapshot (teleporta se
+    > 220 px); andando, só descarta a previsão se ficar bem mais longe que 1 ping de distância. Minigames ficam de fora
+    (têm a própria predição). `net.js` aceita `?lag=`/`?jit=` para simular internet ruim.
   - Câmera segue o próprio player (lerp) com zoom adaptado à janela.
   - Ordem de desenho: fundo pré-renderizado → marcador de destino → patos → **sprites ordenados por Y** (árvores, bancos, postes, fonte, arquibancada, players, bola) → efeitos → nicks → (tela) neve + balões.
   - `hitTest(x, y)` decide se o clique é numa interação ou no chão.

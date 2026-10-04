@@ -139,17 +139,17 @@ export class Hud {
     t.style.transform = `translate(${x + 14}px, ${y + 12}px)`;
   }
 
-  // Latência medida por ping/pong (cor indica a qualidade da conexão).
-  ping(ms) {
+  // Latência medida por ping/pong (cor indica a qualidade da conexão; 🛟 = compensação de lag ligada).
+  ping(ms, comp = false) {
     if (!this.pingEl) {
       this.pingEl = el('div', '');
       this.pingEl.id = 'ping';
       document.body.appendChild(this.pingEl);
     }
     const v = Math.round(ms);
-    this.pingEl.textContent = `📶 ${v} ms`;
+    this.pingEl.textContent = comp ? `📶 ${v} ms 🛟` : `📶 ${v} ms`;
     this.pingEl.className = v < 90 ? 'good' : v < 180 ? 'ok' : 'bad';
-    this.pingEl.title = 'Latência até o servidor';
+    this.pingEl.title = comp ? 'Latência até o servidor — ping alto constante: seu boneco anda na hora (compensação de lag)' : 'Latência até o servidor';
   }
 
   // ---------- desafios / Gol a Gol ----------

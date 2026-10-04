@@ -73,7 +73,7 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - ✅ T-352 Banco 🇺🇸 Inglês (~2.700 perguntas, 15 categorias, 3 níveis) só no servidor, com formato de tema validável (`server/quiz/`, `docs/QUIZ_CONTENT.md`)
 - ✅ T-353 Entrar no meio (começa da largada; depois do corte, na próxima), plateia com palpite e torcida, robôs na sala (fácil/médio/gênio), ausente vai para a plateia
 - ✅ T-354 Cliente: sala de aula procedural (lousa, professor, pistas de tabuleiro, apagador, escudo, pum, troféu), lousa em DOM com A–D, cartas, revisão das erradas no pódio, celular retrato/paisagem com faixa de progresso
-- ✅ T-355 `quiz-balance.js` (simulador), `qzbot.js` (bots pela rede), 16 testes
+- ✅ T-355 `quiz-balance.js` (simulador), `qzbot.js` (bots pela rede), 17 testes
 - 💡 T-356 Temas configuráveis: escolher tema na sala e gerar tema novo por IA (Claude) com validação + revisão + cache (ver QUIZ_CONTENT)
 - 🔜 T-357 Mais temas escritos à mão (espanhol, geografia, matemática básica) e "foco" da sala (só vocabulário, só verbos...)
 - 🔜 T-358 Progresso persistente: palavras que você mais erra voltam em revisão (repetição espaçada) + "🎓 diploma" no nick
@@ -125,4 +125,5 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - 💡 T-402 Snapshots delta + área de interesse
 - ✅ T-403 Deploy Docker na VPS pelo IP externo (`scripts/deploy.sh`, v0.4.0) · ✅ domínio + HTTPS/WSS (T-607, v0.5.0) · 💡 métricas
 - ✅ T-405 Jogabilidade pela internet: atraso adaptativo ao jitter, ping na tela, gzip/ETag, limite por IP (v0.4.0)
+- ✅ T-406 Compensação de lag na praça: predição do próprio boneco quando o ping fica alto constante + `?lag=` para testar (D-030)
 - 💡 T-404 Moderação: kick/mute por admin, rate limit por IP
