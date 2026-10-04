@@ -23,6 +23,26 @@ O script: roda `npm test` → envia o código por SSH (tar) → escreve o `.env`
 `docker compose up -d --build` (jogo + TURN) → confere o `/health` pelo IP externo e pelo `https://` do domínio. Quem estiver jogando cai por ~2 s e **reconecta sozinho** (mesmo nick/visual).
 Variáveis opcionais: `VPS_HOST`, `VPS_PORT`, `VPS_USER`, `VPS_DIR`, `GAME_PORT`.
 
+## Ambiente de teste (dev) na VPS — ao lado da produção
+Para testar um branch "em produção" (internet de verdade, celular no 4G, amigos) **sem trocar o jogo que está no ar**:
+```bash
+./scripts/deploy-dev.sh          # testes → envia este checkout → sobe http://204.157.124.113:3001
+./scripts/deploy-dev.sh --logs   # log do ambiente de teste
+./scripts/deploy-dev.sh --down   # derruba o teste (a produção continua)
+```
+| Item | Teste (dev) | Produção |
+|---|---|---|
+| Endereço | http://204.157.124.113:3001 | https://park.magmacursosltda.com.br · :3000 |
+| Pasta / projeto do Compose | `~/servers/niltonpark-dev` / `niltonpark-dev` | `~/servers/niltonpark` / `niltonpark` |
+| Container / imagem | `niltonpark-dev` / `niltonpark:dev` | `niltonpark` / `niltonpark:latest` |
+| Limites | 192 MB, 0,5 CPU | 256 MB, 1 CPU |
+| TURN (voz) | usa o da produção (segredo lido de `~/servers/niltonpark/.turn-secret`) | `niltonpark-turn` |
+
+São projetos separados: o `deploy.sh` da produção (`--remove-orphans`, `image prune`) não derruba o teste e vice-versa.
+`cat ~/servers/niltonpark-dev/DEPLOYED` mostra qual branch/commit está no teste. Sem HTTPS na porta 3001: a voz
+funciona só para ouvir (o microfone exige HTTPS) — o resto é igual à produção. Quando o branch for aprovado: merge no
+`master` e `./scripts/deploy.sh` (e `--down` no teste, se quiser liberar a memória).
+
 ## Operação na VPS
 ```bash
 ssh -p 45392 daniel@204.157.124.113

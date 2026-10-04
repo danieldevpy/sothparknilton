@@ -30,6 +30,7 @@ node scripts/queimada-balance.js 20 2    # IAs jogando queimada (1v1; use 4 para
 node scripts/qzbot.js 3                  # 3 bots na Corrida das Perguntas (Escola); `--assistir` = plateia; `qzbot.js Bot SeuNick` te chama
 node scripts/quiz-balance.js 300 normal 14   # simula corridas do quiz (habilidade, quem entra atrasado, combo ligado × desligado)
 ./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
+./scripts/deploy-dev.sh                  # TESTE na VPS ao lado da produção: http://204.157.124.113:3001 (--down / --logs)
 node scripts/netcheck.js ws://204.157.124.113:3000/ws   # mede ping/jitter/travadas contra um servidor
 # http://localhost:3000/?lag=300&jit=40   → simula internet ruim no cliente (?comp=1/0 força a compensação de lag)
 node scripts/voice-e2e.mjs               # E2E do chat de voz (Chrome headless + mic falso; precisa `npm i --no-save puppeteer`)
@@ -71,6 +72,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/jitter.js` | Atraso de interpolação adaptativo ao jitter da rede (praça, Gol a Gol, Karatê) |
 | `client/js/lagcomp.js` | Compensação de lag na praça: liga com ping alto constante e prevê o próprio boneco (D-030) |
 | `Dockerfile` / `compose.yml` / `scripts/deploy.sh` | Produção na VPS: jogo + TURN do chat de voz (coturn) — ver `docs/DEPLOY.md` |
+| `deploy/compose.dev.yml` / `scripts/deploy-dev.sh` | Ambiente de teste na VPS (porta 3001, projeto `niltonpark-dev`), sem mexer na produção |
 | `server/VoiceHub.js` | Chat de voz: grupos, convites/pedidos para entrar, mudo, repasse da sinalização WebRTC, credenciais TURN (`room.voice`) |
 | `shared/voice.js` | Constantes (`VOICE`), textos de status, validação da sinalização, ajuste do Opus no SDP |
 | `client/js/voice/` | `VoiceClient` (controle), `peer.js` (RTCPeerConnection), `mic.js` (microfone + WebAudio), `settings.js`, `ui.js` (painel, convites, configurações) + `client/voice.css` |

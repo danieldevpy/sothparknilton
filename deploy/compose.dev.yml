@@ -1,0 +1,30 @@
+# Ambiente de TESTE na VPS, ao lado da produção (ver docs/DEPLOY.md → "Ambiente de teste"):
+# mesmo jogo de um branch qualquer, em outra pasta (~/servers/niltonpark-dev), outro projeto do Compose, outro
+# container e outra porta (3001). Não sobe TURN próprio: usa o da produção (mesmo segredo, lido de lá pelo script).
+# O scripts/deploy-dev.sh copia este arquivo como compose.yml na pasta de teste.
+name: niltonpark-dev
+
+services:
+  game:
+    build: .
+    image: niltonpark:dev
+    container_name: niltonpark-dev
+    restart: unless-stopped
+    ports:
+      - "${GAME_PORT:-3001}:3000"
+    environment:
+      NODE_ENV: production
+      TURN_URLS: "turn:${TURN_HOST:-127.0.0.1}:3478?transport=udp,turn:${TURN_HOST:-127.0.0.1}:3478?transport=tcp"
+      TURN_SECRET: "${TURN_SECRET:-}"
+    # menor que a produção: é só para testar
+    mem_limit: 192m
+    cpus: 0.5
+    pids_limit: 100
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
