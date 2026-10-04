@@ -79,6 +79,8 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - 🔜 T-358 Progresso persistente: palavras que você mais erra voltam em revisão (repetição espaçada) + "🎓 diploma" no nick
 - 🔜 T-359 Pergunta-chefão na última casa ("prova final") e eventos de rodada (todo mundo com cola, ouro duplo)
 - 💡 T-360 Áudio de pronúncia nas perguntas (TTS do navegador: "como se fala") e perguntas de ouvir-e-escolher
+- ✅ T-361a Layout do Quiz com voz/convites/painéis sem sobreposição (D-035, `docs/UI_LAYOUT.md`)
+- 🔜 T-361 Revisar Karatê e Queimada (desktop, retrato e paisagem) em ligação de voz pelo checklist de `docs/UI_LAYOUT.md`
 
 ## Fase 1D — Karatê: próximos 🔜
 - 🔜 T-326 Faixas (branca → preta) por vitórias, persistidas

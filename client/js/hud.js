@@ -154,10 +154,10 @@ export class Hud {
 
   // ---------- desafios / Gol a Gol ----------
 
-  // Cartão ao clicar em outro player.
+  // Cartão ao clicar em outro player, em dois passos:
+  //  1) interações (🎮 Minigames, voz, acenar)  2) desafios de minigame, com botão de voltar.
   playerCard(p, sx, sy, { busy, onChallenge, onKarate, onQueimada, onQuiz, onWave, voice }) {
     const card = $('#player-card');
-    card.replaceChildren();
     const head = el('div', 'pc-head');
     const dot = el('span', 'dot');
     dot.style.background = p.look.hat;
@@ -165,34 +165,52 @@ export class Hud {
     const close = el('button', 'pc-close', '×');
     close.addEventListener('click', () => this.closePlayerCard());
     head.append(close);
-    const btn = el('button', 'pc-challenge', busy ? '⚽ Está jogando...' : '⚽ Desafiar: Gol a Gol');
-    btn.disabled = !!busy;
-    btn.addEventListener('click', () => { onChallenge(); this.closePlayerCard(); });
-    const kt = el('button', 'pc-challenge pc-karate', busy ? '🥋 Ocupado...' : '🥋 Desafiar: Karatê');
-    kt.disabled = !!busy;
-    kt.addEventListener('click', () => { onKarate?.(); this.closePlayerCard(); });
-    const qm = el('button', 'pc-challenge pc-queimada', busy ? '🔴🔵 Ocupado...' : '🔴🔵 Chamar p/ Queimada');
-    qm.disabled = !!busy;
-    qm.addEventListener('click', () => { onQueimada?.(); this.closePlayerCard(); });
-    const qz = el('button', 'pc-challenge pc-quiz', busy ? '📚 Ocupado...' : '📚 Chamar p/ Quiz de inglês');
-    qz.disabled = !!busy;
-    qz.addEventListener('click', () => { onQuiz?.(); this.closePlayerCard(); });
-    const wave = el('button', 'pc-wave', '👋 Acenar');
-    wave.addEventListener('click', () => { onWave(); this.closePlayerCard(); });
-    card.append(head, btn, kt, qm, qz);
-    // chat de voz: convidar / pedir para entrar no grupo (ver voice/VoiceClient.cardAction)
-    if (voice) {
-      const vb = el('button', 'pc-voice', voice.label);
-      vb.disabled = !!voice.disabled;
-      vb.addEventListener('click', () => { voice.onClick?.(); this.closePlayerCard(); });
-      card.append(vb);
-    }
-    card.append(wave);
+
+    const place = () => {
+      const w = 220;
+      const h = card.offsetHeight;
+      card.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, sx - w / 2))}px`;
+      card.style.top = `${Math.max(8, Math.min(window.innerHeight - h, sy - h))}px`;
+    };
+
+    const stepMenu = () => {
+      const games = el('button', 'pc-challenge pc-games', '🎮 Minigames');
+      games.addEventListener('click', stepGames);
+      card.replaceChildren(head, games);
+      // chat de voz: convidar / pedir para entrar no grupo (ver voice/VoiceClient.cardAction)
+      if (voice) {
+        const vb = el('button', 'pc-voice', voice.label);
+        vb.disabled = !!voice.disabled;
+        vb.addEventListener('click', () => { voice.onClick?.(); this.closePlayerCard(); });
+        card.append(vb);
+      }
+      const wave = el('button', 'pc-wave', '👋 Acenar');
+      wave.addEventListener('click', () => { onWave(); this.closePlayerCard(); });
+      card.append(wave);
+      place();
+    };
+
+    const stepGames = () => {
+      const back = el('button', 'pc-wave pc-back', '← Voltar');
+      back.addEventListener('click', stepMenu);
+      const btn = el('button', 'pc-challenge', busy ? '⚽ Está jogando...' : '⚽ Desafiar: Gol a Gol');
+      btn.disabled = !!busy;
+      btn.addEventListener('click', () => { onChallenge(); this.closePlayerCard(); });
+      const kt = el('button', 'pc-challenge pc-karate', busy ? '🥋 Ocupado...' : '🥋 Desafiar: Karatê');
+      kt.disabled = !!busy;
+      kt.addEventListener('click', () => { onKarate?.(); this.closePlayerCard(); });
+      const qm = el('button', 'pc-challenge pc-queimada', busy ? '🔴🔵 Ocupado...' : '🔴🔵 Chamar p/ Queimada');
+      qm.disabled = !!busy;
+      qm.addEventListener('click', () => { onQueimada?.(); this.closePlayerCard(); });
+      const qz = el('button', 'pc-challenge pc-quiz', busy ? '📚 Ocupado...' : '📚 Chamar p/ Quiz de inglês');
+      qz.disabled = !!busy;
+      qz.addEventListener('click', () => { onQuiz?.(); this.closePlayerCard(); });
+      card.replaceChildren(head, back, btn, kt, qm, qz);
+      place();
+    };
+
     card.hidden = false;
-    const w = 220;
-    const h = voice ? 328 : 282;
-    card.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, sx - w / 2))}px`;
-    card.style.top = `${Math.max(8, Math.min(window.innerHeight - h, sy - h))}px`;
+    stepMenu();
   }
 
   closePlayerCard() {

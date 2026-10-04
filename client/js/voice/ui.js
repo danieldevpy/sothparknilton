@@ -112,6 +112,12 @@ export class VoiceUi {
     play('click');
   }
 
+  // avisa o CSS dos minigames/telas: body.vc-on = em ligação (🎤 e painel da voz podem estar na tela).
+  // Todo layout novo precisa funcionar com e sem ela (ver docs/UI_LAYOUT.md).
+  syncBody() {
+    document.body.classList.toggle('vc-on', !!this.v.group);
+  }
+
   toast(text) {
     this.hud.toast(text);
   }
@@ -163,6 +169,7 @@ export class VoiceUi {
       this.btn.textContent = count ? `🎙️ Voz · ${count}` : '🎙️ Voz';
     }
     this.btn.classList.toggle('on', !!g);
+    this.syncBody();
     this.micBtn.hidden = !g;
     this.micBtn.textContent = v.deaf ? '🔕' : muted ? '🔇' : '🎤';
     this.micBtn.classList.toggle('muted', muted);

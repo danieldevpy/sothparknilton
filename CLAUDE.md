@@ -77,6 +77,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `shared/voice.js` | Constantes (`VOICE`), textos de status, validação da sinalização, ajuste do Opus no SDP |
 | `client/js/voice/` | `VoiceClient` (controle), `peer.js` (RTCPeerConnection), `mic.js` (microfone + WebAudio), `settings.js`, `ui.js` (painel, convites, configurações) + `client/voice.css` |
 | `deploy/` + `scripts/setup-domain.sh` | Site do nginx do domínio (HTTPS) e instalador com certbot (rodar com sudo na VPS) |
+| `client/quiz.css` (fim) / `docs/UI_LAYOUT.md` | Convivência da sala com voz, convites e painéis: zonas da tela, camadas (z-index), `body.vc-on`, checklist |
 | `client/js/mobile.js` | Interface mobile (estilo Roblox): detecção, joystick, botões de ação, painéis; ativa `body.mobile` |
 | `client/assets/generated/` | Assets gerados por IA (Kairogen) — ver `docs/ASSETS.md` |
 | `tests/` | Testes `node:test` |
@@ -91,6 +92,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 - `docs/ROADMAP.md` — backlog por fases com IDs
 - `docs/DEVLOG.md` — diário de sessões (o que foi feito, quando)
 - `docs/DEPLOY.md` — produção na VPS (Docker), deploy de uma vez, operação, jogabilidade pela internet
+- `docs/UI_LAYOUT.md` — **zonas da tela, camadas (z-index) e checklist anti-sobreposição (com/sem ligação de voz)** — leia antes de desenhar UI
 - `docs/QUIZ_CONTENT.md` — formato das perguntas/temas da Corrida das Perguntas (como escrever, validar e, no futuro, gerar por IA)
 
 ## Regras de trabalho
@@ -109,13 +111,21 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 13. **Voz**: o áudio nunca passa pelo servidor do jogo (WebRTC P2P/TURN). Regra de grupo nova vai em `server/VoiceHub.js` + `tests/voice.test.js`; mexeu no cliente de voz, rode `scripts/voice-e2e.mjs`. O microfone só pode ficar aberto no grupo, testando ou com convite esperando.
 14. **Mobile**: toda UI nova precisa funcionar em `body.mobile` (retrato e paisagem) — teste com `?mobile=1` e viewport 375×812 / 812×375. Controles de toque novos vão em `mobile.js` (botões em `#m-actions` com `data-show`).
 15. Mexeu em `QM`/`LEVELS` (`shared/queimada.js`)? Rode `scripts/queimada-balance.js` (1v1 e 2v2) e registre em DECISIONS.
-16. **Quiz**: perguntas e respostas só em `server/quiz/` (nunca em `shared/`, que é público). Pergunta nova tem que passar em
+16. **Layout/UI nova (HUD, botões, painéis, telas de minigame): sempre verificar COM e SEM ligação de voz.** Em ligação (`body.vc-on`)
+    aparecem o 🎤 e o painel da voz (até 8 membros) e podem chegar convites — nada pode ficar sobreposto nem sem clique. Teste desktop
+    (1024×768 e 800×600), celular retrato e paisagem, simulando a ligação como em `docs/UI_LAYOUT.md`; siga o checklist de lá e anote as
+    zonas da tela nova. Elemento no `#hud` não passa por cima de UI de sala (z 7) sem subir o `#hud` (ver tabela de camadas).
+17. **Quiz**: perguntas e respostas só em `server/quiz/` (nunca em `shared/`, que é público). Pergunta nova tem que passar em
     `validateTheme` (o teste `tests/quiz.test.js` roda isso) e as erradas têm que ser erradas *de verdade* — ver `docs/QUIZ_CONTENT.md`.
     Mexeu em `QZ`/`MODES`/`CARDS` (`shared/quiz.js`)? Rode `scripts/quiz-balance.js` e registre em DECISIONS.
 
 ## Estado atual
+**v0.8.1 — Menu do player em 2 passos + layout com voz (2026-10-04)**: clicar em outro player agora mostra primeiro
+**🎮 Minigames / 🎙️ voz / 👋 Acenar**; "🎮 Minigames" abre os desafios (Gol a Gol, Karatê, Queimada, Quiz) com **← Voltar**.
+Quiz sem botões sobrepostos em ligação de voz (regra 16, `docs/UI_LAYOUT.md`). Ver D-035, D-036.
+
 **v0.8.0 — Corrida das Perguntas na Escola (2026-10-04)**: a casa do fim da avenida virou a **Escola**. Clique →
-salas (🙋 Correr / 👀 Assistir) ou ➕ Nova sala (Fácil/Médio/Difícil/Misto, 10 ou 14 casas); ou cartão do player →
+salas (🙋 Correr / 👀 Assistir) ou ➕ Nova sala (Fácil/Médio/Difícil/Misto, 10 ou 14 casas); ou cartão do player → 🎮 Minigames →
 📚 Chamar p/ Quiz. Tema 🇺🇸 Inglês com ~2.700 perguntas (tradução, gramática, verbos, situações, falsos cognatos,
 expressões, phrasal verbs...). Todo mundo responde a mesma pergunta; acertou = anda 1 casa; **2 seguidas = quem está na
 sua frente volta 1** (liderando: escudo de 1 pergunta); ⭐ ouro a cada 5 vale 2; 🎁 dá cartas (🤫 Cola, 💨 Pum, 🎲 Tudo
@@ -126,7 +136,7 @@ revisão das erradas. Ver GAME_DESIGN, QUIZ_CONTENT e D-031..D-034.
 anda na hora do clique e converge para o servidor (🛟 no ping). Testar com `?lag=300&jit=40` / `?comp=1`. Ver D-030.
 
 **v0.7.0 — Queimada no Ginásio (2026-10-03)**: novo prédio na praça (à esquerda, em cima do lago). Clique → lista
-de quadras (▶ Entrar) ou ➕ Nova partida (Fácil/Difícil); ou cartão do player → 🔴🔵 Chamar p/ Queimada. Fila
+de quadras (▶ Entrar) ou ➕ Nova partida (Fácil/Difícil); ou cartão do player → 🎮 Minigames → 🔴🔵 Chamar p/ Queimada. Fila
 compartilhada (1v1 → 2v2, quem espera entra quando alguém é queimado), cemitério (volta acertando alguém), arremesso
 com trajetória e força pela distância, pegada por tempo, esquiva/WHOOSH, tabela nas paredes/pneus, modo Híbrido até 50.
 Ver GAME_DESIGN e D-027..D-029.

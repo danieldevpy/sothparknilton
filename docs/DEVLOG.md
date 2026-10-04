@@ -3,6 +3,30 @@
 Diário de desenvolvimento. Entrada nova **no topo**. Formato:
 `## AAAA-MM-DD — título` · o que foi feito · decisões · pendências.
 
+## 2026-10-04 — v0.8.1: Quiz + menu do player em produção (worktree `claude/quiz-menu-production-deploy-465baf`)
+Pedido: o Quiz (testado e aprovado em :3001) e o menu do player em 2 passos (testado em :3002) vão para a produção juntos;
+analisar o que muda ao juntar e derrubar os servidores de teste.
+- **Análise da junção**: três trabalhos soltos — v0.8.0 (commit 643fff7), ajuste de layout com voz (não commitado em
+  `claude/quiz-game-layout-buttons-a66d6e`, era o que estava em :3001) e menu em 2 passos (não commitado em
+  `claude/interaction-menu-steps-932f04`, :3002). Único conflito real: `Hud.playerCard` — o quiz acrescentou `onQuiz` + botão
+  no cartão de 1 passo e o menu reescreveu o cartão. Resolvido pondo "📚 Chamar p/ Quiz" no passo 2 (🎮 Minigames); o resto
+  (`game.js` passa `onQuiz`) já funcionava. CSS sem choque (`.pc-games` no style.css, `.pc-quiz` no quiz.css).
+- Regra 16 duplicada no CLAUDE.md (layout/voz e quiz) → quiz virou 17. Versão 0.8.1. D-036.
+- `fix/mobile-layout` (T-509/T-510) **não** entrou: não foi pedido; merge com este já testado antes (só DEVLOG conflita).
+
+## 2026-10-04 — Quiz: botões sobrepostos em ligação de voz (worktree `claude/quiz-game-layout-buttons-a66d6e`)
+Pedido: no minigame de quiz os botões ficavam sobrepostos e não dava para clicar; lembrar de sempre verificar se está em
+ligação ou não e documentar a regra para desenhos de layout.
+- Este worktree estava no master: avançado (fast-forward) para `claude/english-quiz-minigame-5d7886` (v0.8.0) antes de corrigir.
+- Reproduzido no navegador (desktop 1024×768, celular 375×812/375×667/812×375) simulando a ligação (ver UI_LAYOUT):
+  painel da voz cobrindo Convidar/Assistir/Sair e a lousa (paisagem); 🎤 da voz sumia (retrato/paisagem); barra 🎙️ Voz/🎤/som
+  escondida atrás dos botões da sala (desktop); convites por baixo da lousa; painéis 💬/👥 sob o nav.
+- Correção: `quiz.css` (seção “convivência com a voz, convites e painéis”), `voice.css` (lista de membros rola), `voice/ui.js`
+  (`body.vc-on`). Conferido com `elementFromPoint`/capturas em todos os formatos, com 3, 5 e 8 pessoas na ligação, painel
+  aberto, convite chegando, painel “Convidar”, plateia (assistindo). 111 testes passando.
+- Regra nova: CLAUDE.md nº 16 + `docs/UI_LAYOUT.md` (zonas, z-index, checklist). D-035.
+- Pendente: revisar Karatê e Queimada com `vc-on` (T-361).
+
 ## 2026-10-04 — v0.8.0: Corrida das Perguntas na Escola 📚🇺🇸 (feita no worktree `claude/english-quiz-minigame-5d7886`)
 Pedido: minigame "jogo das perguntas" começando pelo inglês (tema configurável/IA no futuro; agora tudo escrito aqui),
 corrida em que acertar anda uma casa, com mecânicas (2 seguidas = quem está na frente volta 1, com cálculo justo),

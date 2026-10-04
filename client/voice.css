@@ -26,7 +26,7 @@
 .vp-empty p { margin: 0 0 6px; }
 .vp-tip { font-size: 13px; color: #555; margin: 0; }
 
-.vp-members { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.vp-members { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 48px; touch-action: pan-y; }
 .vp-member {
   display: grid; grid-template-columns: 18px 1fr auto; grid-template-areas: 'dot name state' 'ctl ctl ctl';
   align-items: center; gap: 2px 8px; padding: 6px 8px; border-radius: 12px; background: #fff; border: 2px solid #e4e4e4;

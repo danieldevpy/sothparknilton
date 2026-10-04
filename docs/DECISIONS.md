@@ -199,3 +199,22 @@ mesmas casas, então é justo, e quem leva combo e volta não ganha presente de 
 ranking): casas por rapidez virariam jogo de reflexo e puniriam quem lê devagar (o objetivo é aprender). Robôs no próprio
 servidor (fácil 55%, médio 72%, gênio 88% no básico, −9% por nível) para treinar sozinho e completar sala; gente tira
 robô do lugar; robô não segura sala; 4 perguntas sem responder → plateia (senão corridas de robô sem fim).
+
+**D-035 — Layout: cada canto da tela tem dono; toda UI nova é verificada com e sem ligação de voz.** (2026-10-04)
+Problema (teste do Quiz em ligação): a lousa e os botões da sala (z 7) cobriam o que vive no `#hud` (z 5: barra 🎙️ Voz/🎤/som
+e **convites**, inclusive de voz) e no `#m-ui` (z 6: painéis do celular); o 🎤 redondo da voz era escondido pelo CSS do quiz;
+em paisagem o painel da voz cobria Convidar/Assistir/Sair e a borda da lousa. Resultado: botões sobrepostos, sem clique.
+Decisão: (1) regra 16 no CLAUDE.md + `docs/UI_LAYOUT.md` (zonas, camadas, checklist, como simular a ligação); (2) `voice/ui.js`
+liga `body.vc-on` (em grupo) para o CSS das telas se acomodar; (3) no Quiz: `#hud` sobe para z 9 e `#m-ui` para 8; desktop —
+botões da sala em cima, barra da voz desce uma linha, ping depois, painel da voz/“Convidar” a partir de y126 com altura que
+**acaba antes da lousa**, convites na coluna da esquerda; celular — o 🎤 continua na sala (coluna da esquerda no retrato; acima
+do nav na paisagem; some com qualquer painel aberto), painéis e convites começam abaixo do nav (retrato) ou ficam na metade
+esquerda (paisagem, largura = tela − lousa); (4) painel da voz: só a lista de membros rola (`.vp-members`), cabeçalho e
+botões ficam sempre visíveis. Convite é o único que pode cobrir painéis (temporário e com prioridade), nunca a lousa.
+
+**D-036 — Cartão do player em 2 passos: interações primeiro, desafios de minigame dentro de "🎮 Minigames".** (2026-10-04)
+Com Gol a Gol, Karatê, Queimada e Quiz o cartão tinha 4 botões de desafio + voz + acenar (7 linhas) e crescia a cada minigame
+novo (no celular, ocupava metade da tela). Passo 1: `🎮 Minigames` · voz (`🎙️ Chamar`/`🎧 Pedir para entrar`) · `👋 Acenar`.
+Passo 2 (`← Voltar` no topo): um botão por minigame, desabilitado com "Ocupado..." se o alvo já joga. Minigame novo = 1 botão no
+passo 2 (`stepGames` em `hud.js`), o passo 1 não cresce. A altura é medida (`offsetHeight`) a cada passo para o cartão não
+sair da tela; os botões de desafio não fecham mais o cartão antes da hora (só ao escolher/fechar/×).

@@ -173,6 +173,7 @@ button { font-family: var(--font); cursor: pointer; }
 }
 .pc-challenge { background: var(--green); color: #fff; text-shadow: 1px 1px 0 var(--ink); }
 .pc-challenge:disabled { background: #999; cursor: default; }
+.pc-challenge.pc-games { background: var(--blue); }
 .pc-wave { background: #fff; }
 
 #invites { position: absolute; z-index: 30; top: 60px; right: 12px; display: flex; flex-direction: column; gap: 8px; width: min(300px, calc(100vw - 24px)); }

@@ -46,7 +46,7 @@ Minigames chegam depois, aproveitando as áreas do mapa.
 ## Minigame 1 — Gol a Gol ⚽ (v0.2.0)
 Duelo 1x1 no campinho da Área de Sports. Cada um defende um gol e eles **alternam**: um chuta da sua marca, o outro defende. **Primeiro gol vence.**
 
-**Como começar**: clique em qualquer player → cartão → "⚽ Desafiar: Gol a Gol". O outro recebe um convite (20 s) com Aceitar/Recusar. Se os dois se desafiarem, vira aceite automático. Uma partida por vez no campinho; quem está na praça assiste ao vivo.
+**Como começar**: clique em qualquer player → cartão → "🎮 Minigames" → "⚽ Desafiar: Gol a Gol". O outro recebe um convite (20 s) com Aceitar/Recusar. Se os dois se desafiarem, vira aceite automático. Uma partida por vez no campinho; quem está na praça assiste ao vivo.
 
 **Fluxo**: "GOL A GOL!" → contagem 3, 2, 1, JÁ! → cara-ou-coroa decide quem chuta primeiro → turnos de até 10 s → resultado (2,3 s) → troca.
 
@@ -86,7 +86,7 @@ estandarte, lanternas, gongo e um sensei velhinho que comenta a luta). **Melhor 
 Várias lutas podem acontecer ao mesmo tempo (cada uma no seu dojo). Quem fica na praça vê o resultado no chat — ou
 entra pelo **prédio do Dojo** para assistir (ver *Plateia do Dojo* abaixo).
 
-**Como começar**: clique num player → cartão → "🥋 Desafiar: Karatê" (convite 20 s, revanche no fim igual ao Gol a Gol).
+**Como começar**: clique num player → cartão → "🎮 Minigames" → "🥋 Desafiar: Karatê" (convite 20 s, revanche no fim igual ao Gol a Gol).
 
 **Visão 2.5D estilo beat 'em up**: anda em x e em profundidade; você **sempre encara o oponente**; um golpe só acerta
 quem está à frente, no alcance e na mesma faixa de profundidade (dá para desviar indo para cima/baixo).
@@ -150,7 +150,7 @@ A queimada de escola, num **Ginásio** na praça (o prédio de tijolo com telhad
 Proposta original (outro modelo) + melhorias decididas aqui — ver D-027..D-029.
 
 **Entrar**: clicar no Ginásio → painel com as quadras (`Quadra 1 · Fácil · Daniel + Maria × Nilton + João · rodada 2 ·
-⏳ 1 na fila · 🏆 Nilton 25 pts` + **▶ Entrar**) e **➕ Nova partida** (🟢 Fácil / 🔴 Difícil). Também: cartão do player →
+⏳ 1 na fila · 🏆 Nilton 25 pts` + **▶ Entrar**) e **➕ Nova partida** (🟢 Fácil / 🔴 Difícil). Também: cartão do player → 🎮 Minigames →
 **🔴🔵 Chamar p/ Queimada** (da praça cria uma quadra para os dois; de dentro da quadra, **➕ Convidar** lista quem está
 livre e quem aceitar entra na SUA quadra). Notificação pequena quando alguém abre uma quadra. O prédio acende (janelas
 com bolas voando, porta aberta, onomatopeias PÁ! QUEIMOU!) quando tem partida.
@@ -219,7 +219,7 @@ sino, relógio, bandeira do tema, cavalete "QUIZ"). Com aula rolando ela acende:
 porta aberta, "CERTO!/ERROU!/COMBO!" saindo do prédio e o sino toca quando alguém vence. Clique → painel com as salas
 (`Sala 1 · 🇺🇸 Inglês · 🟡 Médio · 14 casas · Nilton 7/14 · Daniel 5/14 · pergunta 9 · 👀 2` + **🙋 Correr** /
 **👀 Assistir**) e **➕ Nova sala** (🟢 Fácil · 🟡 Médio · 🔴 Difícil · 🎲 Misto; ⚡ Rápida 10 casas / 🏁 Normal 14).
-Também: cartão do player → **📚 Chamar p/ Quiz** (da praça abre uma sala para os dois; de dentro, ➕ Convidar).
+Também: cartão do player → **🎮 Minigames → 📚 Chamar p/ Quiz** (da praça abre uma sala para os dois; de dentro, ➕ Convidar).
 Notificação pequena quando alguém abre uma sala.
 
 **A rodada** (todo mundo responde a MESMA pergunta, ao mesmo tempo):

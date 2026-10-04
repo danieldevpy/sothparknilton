@@ -14,7 +14,7 @@ body.qz-on:not(.mobile) .bottom { left: 12px; right: auto; transform: none; widt
 body.qz-on:not(.mobile) #chat-form { width: 270px; }
 body.qz-on:not(.mobile) #chat-input { min-width: 0; }
 @media (max-width: 900px) { body.qz-on:not(.mobile) #chat-log, body.qz-on:not(.mobile) .bottom { display: none; } }
-body.mobile.qz-on #m-ui > :not(.m-top):not(.m-panel) { display: none !important; }
+body.mobile.qz-on #m-ui > :not(.m-top):not(.m-panel):not(.m-voice-mic) { display: none !important; }
 
 /* sair / convidar / correr ↔ assistir */
 .qz-nav { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
@@ -325,4 +325,50 @@ body.mobile .qzb-opt { min-height: 46px; font-size: 16px; }
   body:not(.mobile) #qz-board { max-height: 56vh; padding: 6px 12px; gap: 5px; }
   body:not(.mobile) .qzb-q { font-size: 18px; }
   body:not(.mobile) .qzb-opt { min-height: 40px; font-size: 15px; }
+}
+
+/* ---------- convivência com a voz, convites e painéis (ver docs/UI_LAYOUT.md) ----------
+   body.vc-on = em ligação de voz (🎤 visível).
+   Regra: na sala nada pode cobrir botão de outra coisa — cada canto tem dono. */
+
+/* convites (voz, desafio...) vivem no #hud: sem isto ficariam POR BAIXO da lousa e dos botões da sala */
+body.qz-on #hud { z-index: 9; }
+
+/* desktop: botões da sala ocupam o topo; a barra 🎙️ Voz / 🎤 / som desce para a linha de baixo, o ping logo abaixo;
+   convites e painel da voz começam depois deles */
+body.qz-on:not(.mobile) .top-right { top: 56px; }
+body.qz-on:not(.mobile) #ping { top: 98px; }
+body.qz-on:not(.mobile) #qz-invite { top: 126px; }
+body.qz-on:not(.mobile):has(#voice-panel:not([hidden])) #qz-invite { right: 364px; } /* ao lado do painel da voz, não em cima */
+body.qz-on:not(.mobile) #invites { top: 216px; left: 12px; right: auto; width: 270px; } /* convites na coluna da esquerda: abaixo do grupo, acima do chat */
+body.qz-on:not(.mobile) .voice-panel { top: 126px; max-height: max(150px, calc(48vh - 136px)); } /* acaba antes da lousa */
+body.qz-on:not(.mobile) #qz-cheer { max-width: max(220px, calc(100vw - 600px)); }
+
+/* celular: topo (☰ 💬 👥 🎙️) e painéis ficam por cima da sala; o painel da voz não é mais coberto pelos botões */
+body.mobile.qz-on #m-ui { z-index: 8; }
+body.mobile.qz-on .voice-panel { z-index: 8; }
+body.mobile.qz-on.vc-on #qz-cheer { transform: none; }
+/* o 🎤 some enquanto qualquer painel (💬 👥 ☰ 🎙️) está aberto: o painel da voz tem o próprio botão Mic */
+body.mobile.qz-on:has(.m-panel:not([hidden])) .m-voice-mic { display: none; }
+@media (orientation: portrait) {
+  /* nav (Convidar / assistir / Sair) ocupa a linha abaixo do topo → painéis e convites começam depois dela */
+  body.mobile.qz-on .m-panel, body.mobile.qz-on #invites { top: calc(112px + var(--sat)); }
+  body.mobile.qz-on .voice-panel { max-height: max(180px, calc(40dvh - 120px)); } /* acaba antes da lousa */
+  /* 🎤 da voz: coluna da esquerda, abaixo do ping */
+  body.mobile.qz-on .m-voice-mic {
+    left: calc(10px + var(--sal)); right: auto; top: calc(96px + var(--sat)); bottom: auto; width: 48px; height: 48px; font-size: 22px;
+  }
+  body.mobile.qz-on.vc-on #qz-cheer { left: calc(66px + var(--sal)); max-width: calc(100vw - 76px - var(--sal) - var(--sar)); justify-content: flex-start; }
+}
+@media (orientation: landscape) {
+  /* a lousa ocupa a metade direita: painéis e convites ficam na esquerda, acima do nav (embaixo) */
+  body.mobile.qz-on .m-panel, body.mobile.qz-on .voice-panel, body.mobile.qz-on #invites {
+    left: calc(10px + var(--sal)); right: auto; width: calc(100vw - min(440px, 52vw) - 32px - var(--sal) - var(--sar));
+  }
+  body.mobile.qz-on .m-panel, body.mobile.qz-on .voice-panel { max-height: calc(100dvh - 130px - var(--sat) - var(--sab)); }
+  /* 🎤 da voz: acima do nav */
+  body.mobile.qz-on .m-voice-mic {
+    left: calc(10px + var(--sal)); right: auto; top: auto; bottom: calc(64px + var(--sab)); width: 48px; height: 48px; font-size: 22px;
+  }
+  body.mobile.qz-on.vc-on #qz-cheer { left: calc(66px + var(--sal)); max-width: calc(100vw - min(440px, 52vw) - 86px - var(--sal)); }
 }
