@@ -1036,6 +1036,9 @@ export class QuizClient {
   key(ev, down) {
     if (!this.room) return false;
     const code = ev.code;
+    // apertar-para-falar da voz (padrão B) tem prioridade: falar não pode marcar a opção B sem querer
+    const vs = this.game.voice?.s;
+    if (vs?.mode === 'ptt' && vs.pttKey === code) return false;
     if (!down) return code in ANSWER_KEYS || code in CARD_KEYS;
     if (ev.repeat) return true;
     if (code in ANSWER_KEYS) {

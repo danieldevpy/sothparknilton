@@ -83,7 +83,7 @@ Todo mundo responde a mesma pergunta de inglês (tradução, gramática, verbos,
 | 🎁 Presentes | casas 3, 7, 11 dão cartas: 🤫 **Cola** (some com 2 erradas) · 💨 **Pum** (nuvem nas opções de quem está na frente) · 🎲 **Tudo ou nada** (acertou anda o dobro, errou volta 1) |
 | ⏳ Entrar no meio | começa da largada (perto do fim, entra na próxima corrida) |
 
-Teclas: `1`–`4` ou `A`–`D` respondem · `Q` `W` `E` usam as cartas. No fim, o pódio mostra a **revisão** das que você errou.
+Teclas: `1`–`4` ou `A`–`D` respondem · `Q` `W` `E` usam as cartas (com a voz em "apertar para falar", a tecla da voz — padrão `B` — continua sendo da voz; use `2` para a opção B). No fim, o pódio mostra a **revisão** das que você errou.
 Sozinho? Na sala, **🤖 + Robô** (fácil/médio/gênio) e **▶ Começar sozinho**. Bots pela rede: `node scripts/qzbot.js 3`.
 
 ## O mapa: Praça Central
