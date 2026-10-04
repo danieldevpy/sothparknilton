@@ -115,6 +115,7 @@ export function createGameServer({ port = 3000, host = '0.0.0.0', log = console.
         version: VERSION,
         players: room.players.size,
         fights: room.fights.size,
+        quiz: room.qzs.size,
         match: !!room.match,
         voice: room.voice.stats(),
         uptime: Math.round((Date.now() - STARTED_AT) / 1000),

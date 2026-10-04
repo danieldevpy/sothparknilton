@@ -69,6 +69,7 @@ export function setupMobile(game, hud) {
         <li><b>Toque nas coisas</b>: fonte, bancos, postes, lago, patos, bola</li>
         <li><b>⬆ PULAR</b> e <b>😜</b> para emotes</li>
         <li><b>Toque num player</b> para desafiar no Gol a Gol</li>
+        <li><b>📚 Escola</b> (no fim da avenida, atrás da fonte): Corrida das Perguntas de inglês — toque na resposta certa para andar casas</li>
         <li><b>🎙️ Voz</b>: toque num player → <b>Chamar para conversar por voz</b> (ou <b>Pedir para entrar</b> se ele já estiver num grupo 🎧). O 🎙️ no topo mostra o grupo; o botão 🎤 redondo liga/desliga seu microfone</li>
         <li><b>Chutando</b>: toque no campo para mirar, <b>segure ⚽ CHUTAR</b> e solte na ⭐; ↺ ↻ dão efeito; joystick move a bola</li>
         <li><b>Defendendo</b>: joystick (ou arraste) move o goleiro; <b>🧤⬆ / 🧤⬇</b> mergulham</li>

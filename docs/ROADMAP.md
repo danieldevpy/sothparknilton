@@ -67,6 +67,19 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - 🔜 T-347 Passe para o companheiro de time (e para o cemitério) e "pegada salva um queimado" (variante)
 - 🔜 T-348 Estatísticas persistentes (queimadas, pegadas, campeonatos) e título "rei da quadra"
 
+## Fase 1G — Corrida das Perguntas ✅ (v0.8.0, 2026-10-04)
+- ✅ T-350 Escola na praça (no lugar da casa do fim da avenida): acesa com aula, sino, painel de salas (🙋 Correr / 👀 Assistir / ➕ Nova sala), notificação, convite pelo cartão (`game:'quiz'`)
+- ✅ T-351 `QuizMatch` autoritativo: várias salas, mesma pergunta para todos, acerto anda, combo (quem está na frente volta 1) com cálculo justo, escudo, ouro a cada 5, presentes com cartas (Cola/Pum/Tudo ou nada), chegada, pódio, recomeço
+- ✅ T-352 Banco 🇺🇸 Inglês (~2.700 perguntas, 15 categorias, 3 níveis) só no servidor, com formato de tema validável (`server/quiz/`, `docs/QUIZ_CONTENT.md`)
+- ✅ T-353 Entrar no meio (começa da largada; depois do corte, na próxima), plateia com palpite e torcida, robôs na sala (fácil/médio/gênio), ausente vai para a plateia
+- ✅ T-354 Cliente: sala de aula procedural (lousa, professor, pistas de tabuleiro, apagador, escudo, pum, troféu), lousa em DOM com A–D, cartas, revisão das erradas no pódio, celular retrato/paisagem com faixa de progresso
+- ✅ T-355 `quiz-balance.js` (simulador), `qzbot.js` (bots pela rede), 16 testes
+- 💡 T-356 Temas configuráveis: escolher tema na sala e gerar tema novo por IA (Claude) com validação + revisão + cache (ver QUIZ_CONTENT)
+- 🔜 T-357 Mais temas escritos à mão (espanhol, geografia, matemática básica) e "foco" da sala (só vocabulário, só verbos...)
+- 🔜 T-358 Progresso persistente: palavras que você mais erra voltam em revisão (repetição espaçada) + "🎓 diploma" no nick
+- 🔜 T-359 Pergunta-chefão na última casa ("prova final") e eventos de rodada (todo mundo com cola, ouro duplo)
+- 💡 T-360 Áudio de pronúncia nas perguntas (TTS do navegador: "como se fala") e perguntas de ouvir-e-escolher
+
 ## Fase 1D — Karatê: próximos 🔜
 - 🔜 T-326 Faixas (branca → preta) por vitórias, persistidas
 - 🔜 T-327 Golpe especial com barra de "ki" (enche ao apanhar/defender)

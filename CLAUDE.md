@@ -27,6 +27,8 @@ node scripts/karate-balance.js 40        # estilos de IA lutando entre si (equil
 node scripts/fanbot.js 4                 # 4 bots de torcida: entram na plateia do Dojo quando há luta
 node scripts/qmbot.js 3                  # 3 bots de Queimada no Ginásio (com você = 2v2); `qmbot.js Bot SeuNick` te chama
 node scripts/queimada-balance.js 20 2    # IAs jogando queimada (1v1; use 4 para 2v2, `dificil` p/ o modo difícil)
+node scripts/qzbot.js 3                  # 3 bots na Corrida das Perguntas (Escola); `--assistir` = plateia; `qzbot.js Bot SeuNick` te chama
+node scripts/quiz-balance.js 300 normal 14   # simula corridas do quiz (habilidade, quem entra atrasado, combo ligado × desligado)
 ./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
 node scripts/netcheck.js ws://204.157.124.113:3000/ws   # mede ping/jitter/travadas contra um servidor
 node scripts/voice-e2e.mjs               # E2E do chat de voz (Chrome headless + mic falso; precisa `npm i --no-save puppeteer`)
@@ -56,6 +58,11 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `shared/queimada.js` | Constantes (`QM`, `LEVELS`) e física 2.5D da bola, usadas no servidor e na mira/predição do cliente |
 | `client/js/minigames/gym.js` / `queimada.js` | Prédio do Ginásio (lista/entrar/criar) e cena da quadra (controles, mira, HUD, pódio) |
 | `client/js/render/gymhouse.js` / `court.js` | Prédio do Ginásio e quadra (pneus, bola, placar), procedurais |
+| `server/minigames/Quiz.js` | Corrida das Perguntas numa sala da Escola (pistas, combo, ouro, cartas, robôs, plateia) — várias via `room.qzs` |
+| `server/quiz/` | **Banco de perguntas (só no servidor: o gabarito não vai ao navegador)**: `bank.js` (formato, validação, sorteio), `themes.js` (registro de temas), `en/` (🇺🇸 Inglês, ~2.700 perguntas) |
+| `shared/quiz.js` | Constantes (`QZ`, `MODES`, `CARDS`, `BOTS`) e contas da corrida (alvos do combo, passos, presentes, tempo) |
+| `client/js/minigames/school.js` / `quiz.js` | Prédio da Escola (salas, 🙋 Correr / 👀 Assistir, criar) e cena da corrida (lousa, cartas, plateia, pódio + revisão) |
+| `client/js/render/schoolhouse.js` / `classroom.js` | Prédio da Escola e sala de aula (pistas, professor, apagador, escudo, troféu), procedurais |
 | `client/js/main.js` | Login (nick + visual), conexão, start |
 | `client/js/game.js` | Estado do cliente, interpolação, câmera, loop de render, hit-test |
 | `client/js/render/*` | Desenho procedural: `paint.js` (helpers), `character.js`, `world.js`, `bubbles.js`, `fx.js` |
@@ -69,7 +76,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/mobile.js` | Interface mobile (estilo Roblox): detecção, joystick, botões de ação, painéis; ativa `body.mobile` |
 | `client/assets/generated/` | Assets gerados por IA (Kairogen) — ver `docs/ASSETS.md` |
 | `tests/` | Testes `node:test` |
-| `scripts/` | `bots.js` (bots da sala), `ggbot.js` (bot de Gol a Gol), `golagol-balance.js` (simulador de equilíbrio), `ktbot.js` + `karate-ai.js` + `karate-balance.js` (bot/IA/simulador do Karatê), `qmbot.js` + `queimada-ai.js` + `queimada-balance.js` (Queimada) |
+| `scripts/` | `bots.js` (bots da sala), `ggbot.js` (bot de Gol a Gol), `golagol-balance.js` (simulador de equilíbrio), `ktbot.js` + `karate-ai.js` + `karate-balance.js` (bot/IA/simulador do Karatê), `qmbot.js` + `queimada-ai.js` + `queimada-balance.js` (Queimada), `qzbot.js` + `quiz-balance.js` (Corrida das Perguntas) |
 
 ## Documentação (manter atualizada!)
 - `docs/ARCHITECTURE.md` — como as peças conversam, ticks, interpolação
@@ -80,6 +87,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 - `docs/ROADMAP.md` — backlog por fases com IDs
 - `docs/DEVLOG.md` — diário de sessões (o que foi feito, quando)
 - `docs/DEPLOY.md` — produção na VPS (Docker), deploy de uma vez, operação, jogabilidade pela internet
+- `docs/QUIZ_CONTENT.md` — formato das perguntas/temas da Corrida das Perguntas (como escrever, validar e, no futuro, gerar por IA)
 
 ## Regras de trabalho
 1. **Servidor é autoritativo.** Cliente só pede (`move`, `interact`, `emote`, `chat`); o servidor valida e transmite.
@@ -97,8 +105,19 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 13. **Voz**: o áudio nunca passa pelo servidor do jogo (WebRTC P2P/TURN). Regra de grupo nova vai em `server/VoiceHub.js` + `tests/voice.test.js`; mexeu no cliente de voz, rode `scripts/voice-e2e.mjs`. O microfone só pode ficar aberto no grupo, testando ou com convite esperando.
 14. **Mobile**: toda UI nova precisa funcionar em `body.mobile` (retrato e paisagem) — teste com `?mobile=1` e viewport 375×812 / 812×375. Controles de toque novos vão em `mobile.js` (botões em `#m-actions` com `data-show`).
 15. Mexeu em `QM`/`LEVELS` (`shared/queimada.js`)? Rode `scripts/queimada-balance.js` (1v1 e 2v2) e registre em DECISIONS.
+16. **Quiz**: perguntas e respostas só em `server/quiz/` (nunca em `shared/`, que é público). Pergunta nova tem que passar em
+    `validateTheme` (o teste `tests/quiz.test.js` roda isso) e as erradas têm que ser erradas *de verdade* — ver `docs/QUIZ_CONTENT.md`.
+    Mexeu em `QZ`/`MODES`/`CARDS` (`shared/quiz.js`)? Rode `scripts/quiz-balance.js` e registre em DECISIONS.
 
 ## Estado atual
+**v0.8.0 — Corrida das Perguntas na Escola (2026-10-04)**: a casa do fim da avenida virou a **Escola**. Clique →
+salas (🙋 Correr / 👀 Assistir) ou ➕ Nova sala (Fácil/Médio/Difícil/Misto, 10 ou 14 casas); ou cartão do player →
+📚 Chamar p/ Quiz. Tema 🇺🇸 Inglês com ~2.700 perguntas (tradução, gramática, verbos, situações, falsos cognatos,
+expressões, phrasal verbs...). Todo mundo responde a mesma pergunta; acertou = anda 1 casa; **2 seguidas = quem está na
+sua frente volta 1** (liderando: escudo de 1 pergunta); ⭐ ouro a cada 5 vale 2; 🎁 dá cartas (🤫 Cola, 💨 Pum, 🎲 Tudo
+ou nada); robôs para treinar sozinho; entrou no meio = começa da largada; plateia com palpite e torcida; pódio com
+revisão das erradas. Ver GAME_DESIGN, QUIZ_CONTENT e D-031..D-034.
+
 **v0.7.0 — Queimada no Ginásio (2026-10-03)**: novo prédio na praça (à esquerda, em cima do lago). Clique → lista
 de quadras (▶ Entrar) ou ➕ Nova partida (Fácil/Difícil); ou cartão do player → 🔴🔵 Chamar p/ Queimada. Fila
 compartilhada (1v1 → 2v2, quem espera entra quando alguém é queimado), cemitério (volta acertando alguém), arremesso

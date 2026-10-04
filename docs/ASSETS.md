@@ -8,7 +8,9 @@
 Cada objeto tem uma função de desenho com a origem na **base** (pés/chão):
 `drawTree`, `drawBench`, `drawLamp`, `drawFountain`, `drawBleachers`, `drawSign` (`render/world.js`),
 `drawBall`, `drawDuck`, `drawCharacter` (`render/character.js`), `drawFighter` (`render/fighter.js`, karatê),
-`prerenderDojo`/`drawGong`/`drawSensei` (`render/dojo.js`).
+`prerenderDojo`/`drawGong`/`drawSensei` (`render/dojo.js`), `drawSchoolBuilding`/`drawSchoolLive` (`render/schoolhouse.js`)
+e `prerenderClassroom`/`trackCanvas`/`drawTeacher`/`drawGift`/`drawTrophy`/`drawEraser`/`drawShieldBubble`/`drawFartCloud`
+(`render/classroom.js`, Corrida das Perguntas).
 
 O lutador é montado a partir de uma "pose" (inclinação, posição dos punhos e pés, olhos, boca) calculada por
 estado/tempo do golpe em `poseOf()` — dá para trocar por sprites por pose (`jab`, `punch`, `kick`, `hkick`, `block`,
@@ -47,7 +49,8 @@ Sugestão para os próximos assets: gerar **folhas de referência** (um objeto p
 ## Sons
 Sintetizados em `client/js/audio.js` (WebAudio). Para trocar por arquivos, reimplemente `play(name)` mantendo os nomes:
 `chat, join, quack, splash, coin, fart, boing, click, goal, lamp` (+ Gol a Gol e `kt_swing, kt_hit, kt_heavy, kt_block,
-kt_parry, kt_break, kt_dash, kt_down, kt_gong` do Karatê).
+kt_parry, kt_break, kt_dash, kt_down, kt_gong` do Karatê e `qz_lock, qz_right, qz_wrong, qz_hop, qz_hit, qz_block, qz_shield,
+qz_gift, qz_card, qz_gold, qz_bell, qz_whoosh` da Corrida das Perguntas).
 
 ## Fonte
 "Comic Neue" (Google Fonts), fallback Comic Sans MS.

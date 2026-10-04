@@ -170,3 +170,36 @@ test('IP real: cabeçalho do proxy só vale quando a conexão vem de endereço p
   assert.equal(clientIp(req('172.18.0.1')), '172.18.0.1');
   assert.equal(clientIp(req('127.0.0.1', { 'x-real-ip': 'lixo<script>' })), '127.0.0.1');
 });
+
+test('quiz pela rede: sala com robô, pergunta chega sem gabarito e a revelação traz a certa', async () => {
+  const game = createGameServer({ port: 0, host: '127.0.0.1', log: () => {} });
+  const port = await game.ready;
+  try {
+    const a = client(port);
+    await a.open;
+    a.send({ t: MSG.HELLO, nick: 'Ana' });
+    const w = await a.waitFor((m) => m.t === MSG.WELCOME);
+    assert.ok(w.qzThemes.some((t) => t.id === 'en' && t.count >= 2000));
+    a.send({ t: MSG.QZ_CREATE, mode: 'easy', len: 10 });
+    const enter = await a.waitFor((m) => m.t === MSG.QZ_ENTER);
+    assert.equal(enter.role, 'play');
+    a.send({ t: MSG.QZ_BOT, add: 'hard' });
+    const withBot = await a.waitFor((m) => m.t === MSG.QZ_ROOM && m.r.some((r) => r.bot === 'hard'));
+    // tira o robô (senão a revelação espera ele "pensar") e corre sozinho com a contagem encurtada
+    a.send({ t: MSG.QZ_BOT, remove: withBot.r.find((r) => r.bot).id });
+    await a.waitFor((m) => m.t === MSG.QZ_ROOM && m.r.length === 1);
+    a.send({ t: MSG.QZ_START });
+    await a.waitFor((m) => m.t === MSG.QZ_PHASE && m.ph === 'count');
+    a.send({ t: MSG.QZ_START });
+    const q = await a.waitFor((m) => m.t === MSG.QZ_Q, 5000);
+    assert.equal(q.opts.length, 3, 'fácil: 3 opções');
+    assert.equal(q.ok, undefined);
+    a.send({ t: MSG.QZ_ANSWER, n: q.n, i: 0 });
+    const rv = await a.waitFor((m) => m.t === MSG.QZ_REVEAL, 3000);
+    assert.equal(rv.a, q.opts[rv.ok]);
+    assert.equal((await fetch(`http://127.0.0.1:${port}/health`).then((r) => r.json())).quiz, 1);
+    a.ws.close();
+  } finally {
+    await game.close();
+  }
+});

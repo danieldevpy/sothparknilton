@@ -72,6 +72,12 @@ export function drawCharacter(ctx, who, st) {
   } else if (pose === 'qcatch') {
     squash = 0.94;
   }
+  // ---- poses da Corrida das Perguntas ----
+  if (pose === 'qzhit') {
+    tilt = -0.38 * dir + Math.sin(t * 22) * 0.07; // levou o apagador: tomba para trás
+  } else if (pose === 'qzwin') {
+    hop = Math.abs(Math.sin(t * 8)) * 16;
+  }
 
   const baseY = sitting ? (st.pose === 'bench' ? -14 : 6) : 0;
 
@@ -171,6 +177,13 @@ export function drawCharacter(ctx, who, st) {
   } else if (pose === 'qdodge' || pose === 'qstun') {
     const w = Math.sin(t * 16) * 6;
     lx = -24; rx = 24; ly = -46 + w; ry = -46 - w;
+  } else if (pose === 'qzhand') {
+    // respondeu: mão levantada bem alto, como na sala de aula
+    if (dir > 0) { rx = 13; ry = -78; } else { lx = -13; ly = -78; }
+  } else if (pose === 'qzwin') {
+    lx = -22; rx = 22; ly = ry = -60;
+  } else if (pose === 'qzhit') {
+    lx = -26; rx = 26; ly = -40; ry = -44;
   }
   for (const [ax, ay, s] of [[lx, ly, 5], [rx, ry, 6]]) {
     blob(ctx, ax, ay, 6, 6, seed + s, 0.08, frame, 10);
@@ -193,11 +206,22 @@ export function drawCharacter(ctx, who, st) {
   fillStroke(ctx, shade(look.hat, 0.22), 2.5);
   blob(ctx, Math.sin(t * 3 + seed) * 1.5, hy - 28, 6.5, 6, seed + 10, 0.1, frame, 12);
   fillStroke(ctx, shade(look.hat, 0.32), 2.5);
+  // robô da Corrida das Perguntas: antena com bolinha piscando
+  if (who.bot) {
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(8, hy - 30);
+    ctx.quadraticCurveTo(14, hy - 40, 12 + Math.sin(t * 5) * 2, hy - 48);
+    ctx.stroke();
+    blob(ctx, 12 + Math.sin(t * 5) * 2, hy - 50, 4, 4, seed + 12, 0.1, frame, 10);
+    fillStroke(ctx, Math.floor(t * 3) % 2 ? '#ff4d3a' : '#ffe14d', 2);
+  }
 
   // ---- olhos ----
   const look_x = dir * 2.5;
   const blinking = hash(seed, Math.floor(t * 0.7)) < 0.18 && (t * 0.7) % 1 < 0.12;
-  const shocked = (e === 'fart' && et < 1) || diving || pose === 'qcatch' || pose === 'qdodge' || pose === 'qstun';
+  const shocked = (e === 'fart' && et < 1) || diving || pose === 'qcatch' || pose === 'qdodge' || pose === 'qstun' || pose === 'qzhit';
   for (const ex of [-7.5, 7.5]) {
     if (blinking) {
       ctx.strokeStyle = INK;

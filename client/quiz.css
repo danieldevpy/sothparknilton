@@ -1,0 +1,328 @@
+/* ---------- Corrida das Perguntas (Escola) ----------
+   #qz-ui, #school-panel e #qz-notes ficam fora do #hud (por cima do #m-ui no celular). */
+
+#qz-ui { position: fixed; inset: 0; z-index: 7; pointer-events: none; font-family: var(--font); }
+#qz-ui button { font-family: inherit; pointer-events: auto; touch-action: manipulation; cursor: pointer; }
+#qz-ui button:disabled { cursor: default; }
+
+/* na sala, some o que é da praça */
+body.qz-on #emotes, body.qz-on .help, body.qz-on #score, body.qz-on #zone-toast,
+body.qz-on #gg-bar, body.qz-on #gg-help, body.qz-on #online-list, body.qz-on #online-btn { display: none !important; }
+/* desktop: chat no canto de baixo à esquerda, a lousa fica à direita dele */
+body.qz-on:not(.mobile) #chat-log { opacity: .9; max-height: 150px; bottom: 58px; left: 12px; width: 270px; }
+body.qz-on:not(.mobile) .bottom { left: 12px; right: auto; transform: none; width: 270px; bottom: 10px; }
+body.qz-on:not(.mobile) #chat-form { width: 270px; }
+body.qz-on:not(.mobile) #chat-input { min-width: 0; }
+@media (max-width: 900px) { body.qz-on:not(.mobile) #chat-log, body.qz-on:not(.mobile) .bottom { display: none; } }
+body.mobile.qz-on #m-ui > :not(.m-top):not(.m-panel) { display: none !important; }
+
+/* sair / convidar / correr ↔ assistir */
+.qz-nav { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
+.qz-nav button {
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 999px; padding: 5px 12px;
+  font-weight: 700; font-size: 14px; box-shadow: 3px 3px 0 var(--ink);
+}
+.qz-exit { background: var(--yellow) !important; }
+.qz-inv { background: #c9f3d2 !important; }
+.qz-role.want { background: #ffd0a8 !important; animation: qz-pulse .9s infinite alternate; }
+@keyframes qz-pulse { to { transform: translateY(-3px); } }
+
+/* grupo (estilo RPG): posição, sequência, escudo, cartas */
+#qz-party {
+  position: absolute; top: 12px; left: 12px; width: 260px; pointer-events: none;
+  background: rgba(255, 253, 246, .93); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 3px 3px 0 var(--ink);
+  padding: 5px 8px; font-size: 13px; display: flex; flex-direction: column; gap: 2px;
+}
+#qz-party:empty { display: none; }
+.qp-row { display: grid; grid-template-columns: 12px 74px 1fr 34px auto auto; gap: 5px; align-items: center; padding: 1px 3px; border-radius: 6px; }
+.qp-row.me { background: #fff1a8; }
+.qp-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); }
+.qp-nick { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qp-bar { height: 9px; border: 2px solid var(--ink); border-radius: 6px; background: #eee6d0; overflow: hidden; }
+.qp-bar b { display: block; height: 100%; transition: width .5s; }
+.qp-pos { font-weight: 700; font-size: 12px; text-align: right; }
+.qp-flags, .qp-cards { font-size: 12px; white-space: nowrap; }
+.qp-watch { font-size: 12px; font-weight: 700; color: #6a5a4a; text-align: right; }
+
+/* ---------- lousa (pergunta + opções) ---------- */
+#qz-board {
+  position: absolute; right: 12px; bottom: 10px; width: min(940px, calc(100vw - 306px));
+  max-height: 52vh; overflow-y: auto; pointer-events: auto;
+  background: #2f5d46; color: #f4f1e6; border: 8px solid #8a5a2b; border-radius: 16px;
+  box-shadow: 0 0 0 3px var(--ink), 5px 5px 0 3px var(--ink); padding: 10px 14px 10px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+#qz-board.gold { border-color: #e2b13c; box-shadow: 0 0 0 3px var(--ink), 0 0 26px 6px rgba(255, 215, 80, .55); }
+.qzb-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.qzb-n {
+  background: #f4f1e6; color: var(--ink); font-weight: 700; border-radius: 999px; padding: 1px 10px; border: 2px solid var(--ink); font-size: 14px;
+}
+.qzb-cat { font-weight: 700; font-size: 15px; }
+.qzb-lvl { font-size: 13px; }
+.qzb-gold { display: none; margin-left: auto; background: #ffe14d; color: var(--ink); font-weight: 700; border: 2px solid var(--ink); border-radius: 999px; padding: 1px 10px; animation: qz-pulse .6s infinite alternate; }
+#qz-board.gold .qzb-gold { display: inline-block; }
+.qzb-timer { display: flex; align-items: center; gap: 8px; }
+.qzb-bar { position: relative; flex: 1; height: 12px; border-radius: 8px; background: rgba(0, 0, 0, .3); border: 2px solid rgba(255, 255, 255, .5); overflow: hidden; }
+.qzb-bar i { position: absolute; inset: 0; background: #f4f1e6; transform-origin: left; }
+.qzb-timer b { flex: none; min-width: 34px; text-align: right; font-size: 16px; color: #f4f1e6; }
+.qzb-timer.hurry i { background: #ff7a5c; }
+.qzb-timer.hurry b { color: #ff9a8a; animation: qz-pulse .3s infinite alternate; }
+.qzb-q { font-size: 22px; font-weight: 700; text-align: center; line-height: 1.25; min-height: 1.3em; text-shadow: 0 1px 0 rgba(0, 0, 0, .3); overflow-wrap: anywhere; }
+.qzb-opts { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qzb-opts[data-n="2"] { grid-template-columns: 1fr 1fr; }
+.qzb-opts[data-n="3"] { grid-template-columns: 1fr 1fr 1fr; }
+.qzb-opt {
+  position: relative; display: flex; align-items: center; gap: 9px; text-align: left; min-height: 50px;
+  background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink);
+  padding: 6px 10px; font-size: 17px; font-weight: 700; transition: transform .08s, opacity .2s;
+}
+.qzb-opt:not(:disabled):hover { transform: translateY(-2px); }
+.qzb-opt:not(:disabled):active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.qzb-opt kbd {
+  flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; border: 2px solid var(--ink);
+  font-family: inherit; font-size: 16px; color: #fff; text-shadow: 1px 1px 0 var(--ink);
+}
+.qzb-opt:nth-child(1) kbd { background: var(--red); }
+.qzb-opt:nth-child(2) kbd { background: var(--blue); }
+.qzb-opt:nth-child(3) kbd { background: #f2a81e; }
+.qzb-opt:nth-child(4) kbd { background: var(--green); }
+.qzb-txt { flex: 1; overflow-wrap: anywhere; }
+.qzb-opt.picked { outline: 4px solid var(--yellow); outline-offset: 1px; }
+.qzb-opt.picked::after { content: '✋'; position: absolute; right: 8px; top: -14px; font-size: 22px; }
+.qzb-opt.dim { opacity: .55; }
+.qzb-opt.ok { background: #b8f0c4; opacity: 1; animation: qz-ok .5s ease-out; }
+.qzb-opt.ok::before { content: '✔'; position: absolute; right: 10px; font-size: 22px; color: var(--green); }
+.qzb-opt.bad { background: #ffb3a3; opacity: 1; }
+.qzb-opt.bad::before { content: '✖'; position: absolute; right: 10px; font-size: 20px; color: #c0321f; }
+@keyframes qz-ok { 0% { transform: scale(1); } 40% { transform: scale(1.05); } 100% { transform: scale(1); } }
+.qzb-opt.cola { opacity: .3; text-decoration: line-through; }
+.qzb-opt.cola kbd::after { content: '🤫'; position: absolute; left: 20px; top: -8px; font-size: 14px; }
+.qzb-who { position: absolute; right: 36px; bottom: -9px; display: flex; gap: 2px; }
+.qzb-who i {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--ink); font-style: normal; font-size: 10px; color: #fff;
+  display: grid; place-items: center; text-shadow: 1px 1px 0 var(--ink);
+}
+/* nuvem do pum por cima das opções */
+.qzb-pum {
+  position: relative; margin-top: -4px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
+  min-height: 108px; border-radius: 16px; border: 3px dashed #5f8a1e; background: radial-gradient(circle at 30% 40%, #b5e655, #7fb52a 60%, #5f8a1e);
+  color: var(--ink); cursor: pointer; pointer-events: auto; animation: qz-stink .5s infinite alternate; touch-action: manipulation;
+}
+.qzb-pum span { font-size: 44px; }
+.qzb-pum b { font-size: 20px; }
+.qzb-pum small { width: 100%; text-align: center; font-weight: 700; }
+@keyframes qz-stink { to { transform: translateY(-2px) rotate(-.6deg); } }
+#qz-board:has(.qzb-pum:not([hidden])) .qzb-opts { display: none; }
+.qzb-tip { background: rgba(0, 0, 0, .22); border: 2px dashed rgba(255, 255, 255, .45); border-radius: 10px; padding: 6px 10px; font-size: 15px; }
+.qzb-tip b { color: #ffe14d; }
+.qzb-tiptxt { color: #e9f7e9; }
+.qzb-foot { display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; min-height: 0; }
+.qzb-cards { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.qzb-card {
+  display: flex; align-items: center; gap: 5px; background: #fff6d6; color: var(--ink); border: 3px solid var(--ink); border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--ink); padding: 3px 9px; font-weight: 700; font-size: 14px;
+}
+.qzb-card:disabled { opacity: .5; }
+.qzb-card .qzb-ci { font-size: 19px; }
+.qzb-card kbd { font-family: inherit; font-size: 11px; border: 1.5px solid var(--ink); border-radius: 4px; padding: 0 4px; background: #fff; }
+.qzc-cola { background: #d6f5dc; }
+.qzc-pum { background: #e4f7c0; }
+.qzc-dobro { background: #ffe9a8; }
+.qzb-nocard { font-size: 12px; opacity: .75; }
+.qzb-on { font-weight: 700; color: #ffe14d; }
+.qzb-status { font-weight: 700; font-size: 14px; text-align: right; flex: 1; min-width: 180px; }
+.qzb-status.combo { color: #ffb347; }
+.qzb-status.threat { color: #ff9a8a; animation: qz-pulse .5s infinite alternate; }
+.qzb-status.safe { color: #9fd8ff; }
+
+/* modos da lousa */
+#qz-board[data-mode="lobby"] > :not(.qzb-head):not(.qzb-lobby),
+#qz-board[data-mode="count"] > :not(.qzb-head):not(.qzb-lobby),
+#qz-board[data-mode="over"] > :not(.qzb-head):not(.qzb-lobby) { display: none; }
+#qz-board[data-mode="intro"] .qzb-opts, #qz-board[data-mode="intro"] .qzb-timer,
+#qz-board[data-mode="intro"] .qzb-tip, #qz-board[data-mode="intro"] .qzb-lobby,
+#qz-board[data-mode="ask"] .qzb-lobby, #qz-board[data-mode="reveal"] .qzb-lobby,
+#qz-board[data-mode="reveal"] .qzb-timer { display: none; }
+#qz-board[data-mode="intro"] .qzb-q { font-size: 26px; color: #ffe14d; }
+.qzb-lobby { display: flex; flex-direction: column; gap: 8px; }
+.qzl-title { font-size: 18px; font-weight: 700; text-align: center; }
+.qzl-count { font-size: 34px; font-weight: 700; text-align: center; color: #ffe14d; text-shadow: 2px 2px 0 var(--ink); }
+.qzl-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.qzl-row { display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, .12); border: 2px solid rgba(255, 255, 255, .4); border-radius: 999px; padding: 2px 10px; }
+.qzl-row i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); }
+.qzl-row small { opacity: .8; }
+.qzl-x { border: none; background: none; color: #ffb3a3; font-size: 15px; padding: 0 2px; }
+.qzl-want { width: 100%; text-align: center; font-size: 13px; color: #ffe14d; }
+.qzl-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.qzl-btns button { border: 3px solid var(--ink); border-radius: 12px; padding: 7px 14px; font-weight: 700; font-size: 15px; box-shadow: 2px 2px 0 var(--ink); }
+.qzl-start { background: var(--green); color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.qzl-bot { background: #d9f0ff; }
+.qzl-bot.hard { background: #ffd0a8; }
+.qzl-how { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.45; columns: 2; column-gap: 24px; }
+.qzl-how li { break-inside: avoid; }
+
+/* torcida (quem assiste) */
+#qz-cheer { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); }
+#qz-cheer button { border: 3px solid var(--ink); border-radius: 999px; box-shadow: 2px 2px 0 var(--ink); font-weight: 700; font-size: 14px; padding: 4px 11px; }
+.qc-go { color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.qc-r { background: var(--paper); font-size: 18px !important; padding: 2px 9px !important; }
+
+/* convidar (dentro da sala) — mesmo estilo do da quadra */
+#qz-invite {
+  position: absolute; top: 60px; right: 12px; width: min(300px, calc(100vw - 24px)); max-height: 60vh; overflow: auto;
+  pointer-events: auto; background: var(--paper); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink);
+  padding: 8px 10px;
+}
+
+/* pódio + revisão */
+#qz-podium { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(20, 30, 50, .4); pointer-events: auto; }
+.qzp-card {
+  background: var(--paper); border: 4px solid var(--ink); border-radius: 18px; box-shadow: 6px 6px 0 var(--ink);
+  padding: 12px 18px; width: min(560px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; text-align: center;
+  animation: dp-in .35s cubic-bezier(.3, 1.6, .6, 1);
+}
+.qzp-emoji { font-size: 44px; }
+.qzp-card h2 { margin: 2px 0 8px; font-size: 21px; }
+.qzp-rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.qzp-rank li { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 6px; align-items: center; background: #fff6e6; border: 2px solid var(--ink); border-radius: 10px; padding: 3px 8px; }
+.qzp-rank li.me { background: #fff1a8; }
+.qzp-pos { font-size: 18px; }
+.qzp-stats { font-size: 12px; color: #6a5a4a; }
+.qzp-review { margin-top: 10px; text-align: left; background: #2f5d46; color: #f4f1e6; border: 4px solid #8a5a2b; border-radius: 12px; padding: 8px 10px; font-size: 14px; }
+.qzp-review ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.qzp-review li { display: flex; flex-direction: column; border-top: 1px dashed rgba(255, 255, 255, .35); padding-top: 5px; }
+.qzr-q { font-weight: 700; }
+.qzr-a { color: #b8f0c4; font-weight: 700; }
+.qzr-m { color: #ffb3a3; font-size: 13px; }
+.qzp-review small { color: #e9f7e9; opacity: .9; }
+.qzp-sub { font-size: 13px; font-weight: 700; color: #6a5a4a; margin: 8px 0; }
+.qzp-actions { display: flex; gap: 8px; justify-content: center; }
+.qzp-actions button { border: 3px solid var(--ink); border-radius: 12px; padding: 7px 14px; font-weight: 700; font-size: 15px; box-shadow: 2px 2px 0 var(--ink); }
+.qzp-stay { background: var(--green); color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.qzp-out { background: var(--yellow); }
+
+/* ---------- painel da Escola (clicar no prédio) ---------- */
+#school-panel {
+  position: fixed; z-index: 8; top: 76px; left: 50%; transform: translateX(-50%);
+  width: min(520px, calc(100vw - 24px)); max-height: 76vh; overflow: auto;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 5px 5px 0 var(--ink);
+  padding: 10px 12px 8px; font-family: var(--font); animation: dp-in .3s cubic-bezier(.3, 1.6, .6, 1);
+}
+.sp-head { display: flex; align-items: center; justify-content: space-between; font-size: 18px; margin-bottom: 6px; }
+.sp-x { border: none; background: none; font-size: 26px; line-height: 1; padding: 0 4px; cursor: pointer; }
+.sp-list { display: flex; flex-direction: column; gap: 8px; }
+.sp-row { display: flex; align-items: center; gap: 10px; justify-content: space-between; background: #eef6ee; border: 3px solid var(--ink); border-radius: 12px; padding: 8px 10px; }
+.sp-txt { min-width: 0; }
+.sp-title { display: flex; align-items: center; gap: 5px; font-size: 16px; flex-wrap: wrap; }
+.sp-chip { font-size: 11px; font-weight: 700; border: 2px solid var(--ink); border-radius: 999px; padding: 0 6px; background: #fff; }
+.sp-easy { background: #b8f0c4; }
+.sp-normal { background: #fff1a8; }
+.sp-hard { background: #ffb3a3; }
+.sp-mix { background: #e2d4ff; }
+.sp-racers { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.sp-racer { font-size: 13px; background: #fff; border: 2px solid var(--ink); border-radius: 8px; padding: 0 6px; }
+.sp-racer.bot { background: #e4eef7; }
+.sp-info { font-size: 12px; font-weight: 700; color: #4a6a5a; margin-top: 2px; }
+.sp-btns { display: flex; flex-direction: column; gap: 5px; flex: none; }
+.sp-btns button { border: 3px solid var(--ink); border-radius: 12px; padding: 6px 10px; font-weight: 700; font-size: 14px; box-shadow: 2px 2px 0 var(--ink); cursor: pointer; }
+.sp-play { background: var(--green); color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.sp-watch { background: #d9f0ff; }
+.sp-btns button:disabled { background: #bbb; cursor: default; }
+.sp-empty { text-align: center; font-weight: 700; margin: 10px 0; }
+.sp-create { margin-top: 10px; padding: 8px; border: 3px dashed var(--ink); border-radius: 12px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.sp-create-t { font-weight: 700; }
+.sp-opts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.sp-opt { border: 3px solid var(--ink); border-radius: 12px; padding: 5px 10px; font-weight: 700; font-size: 14px; background: #fff; cursor: pointer; opacity: .75; }
+.sp-opt.on { opacity: 1; box-shadow: 2px 2px 0 var(--ink); outline: 3px solid var(--yellow); }
+.sp-new { border: 3px solid var(--ink); border-radius: 12px; padding: 8px 16px; font-weight: 700; font-size: 16px; background: #2f5d46; color: #fff; box-shadow: 3px 3px 0 var(--ink); cursor: pointer; }
+.sp-soon { font-size: 12px; color: #7a6a5a; font-weight: 700; }
+.sp-tip { font-size: 12px; font-weight: 700; color: #7a6a5a; text-align: center; margin: 8px 0 2px; }
+
+/* ---------- notificação: "fulano abriu uma sala" ---------- */
+#qz-notes {
+  position: fixed; z-index: 8; top: 86px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; font-family: var(--font);
+}
+body.kt-on #qz-notes, body.qm-on #qz-notes, body.qz-on #qz-notes { display: none; }
+.qz-note {
+  position: relative; overflow: hidden; pointer-events: auto; display: flex; align-items: center; gap: 6px;
+  background: rgba(255, 253, 246, .96); border: 2px solid var(--ink); border-radius: 999px; box-shadow: 2px 2px 0 var(--ink);
+  padding: 3px 4px 3px 11px; font-size: 13px; max-width: calc(100vw - 24px); animation: kn-in .35s cubic-bezier(.3, 1.6, .6, 1);
+}
+.zn-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.zn-sub { color: #6a5a4a; }
+.zn-go {
+  flex: none; background: var(--green); color: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 2px 9px;
+  font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer; text-shadow: 1px 1px 0 var(--ink);
+}
+.zn-watch { background: #d9f0ff; color: var(--ink); text-shadow: none; }
+.zn-timer { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--green); transform-origin: left; animation: kn-time linear forwards; }
+
+/* cartão do player e convite */
+.pc-quiz { background: #2f5d46; }
+.invite.qz-invite { background: #e3f4e6; }
+
+/* ---------- celular (body.mobile): retrato e paisagem ---------- */
+body.mobile #qz-ui, body.mobile #school-panel, body.mobile #qz-notes { font-family: var(--m-font); }
+body.mobile .qz-nav { top: calc(10px + var(--sat)); right: calc(10px + var(--sar)); }
+body.mobile .qz-nav button {
+  background: var(--m-glass) !important; color: #fff; border: 2px solid var(--m-glass-border); border-radius: 15px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .25); padding: 0 12px; height: 48px; font-size: 18px;
+}
+body.mobile .qz-role.want { background: rgba(255, 140, 60, .85) !important; }
+body.mobile .qz-long { display: none; }
+body.mobile #qz-party { display: none; }
+body.mobile #qz-invite { top: calc(64px + var(--sat)); right: calc(10px + var(--sar)); }
+body.mobile #qz-cheer { top: calc(66px + var(--sat)); }
+body.mobile #school-panel {
+  top: auto; bottom: calc(10px + var(--sab)); left: calc(10px + var(--sal)); right: calc(10px + var(--sar));
+  width: auto; transform: none; max-height: 70dvh;
+}
+body.mobile .sp-btns button { padding: 10px 12px; font-size: 15px; }
+body.mobile #qz-notes { top: calc(66px + var(--sat)); }
+body.mobile .zn-go { padding: 5px 11px; font-size: 13px; }
+body.mobile #qz-board { border-width: 6px; padding: 8px 10px; gap: 6px; }
+body.mobile .qzb-opt { min-height: 46px; font-size: 16px; }
+@media (orientation: portrait) {
+  /* abaixo da barra de ícones (no topo ela já tem ☰ 💬 👥 🎙️) */
+  body.mobile .qz-nav { top: calc(66px + var(--sat)); }
+  body.mobile .qz-nav button { height: 40px; font-size: 16px; padding: 0 10px; border-radius: 12px; }
+  body.mobile #qz-cheer { top: calc(114px + var(--sat)); }
+  body.mobile.qz-on #ping { right: auto; left: calc(10px + var(--sal)); top: calc(70px + var(--sat)); }
+  body.mobile #qz-invite { top: calc(112px + var(--sat)); }
+  body.mobile #qz-board {
+    left: calc(6px + var(--sal)); right: calc(6px + var(--sar)); bottom: calc(6px + var(--sab)); width: auto; transform: none;
+    max-height: 60dvh;
+  }
+  body.mobile .qzb-q { font-size: 18px; }
+  body.mobile .qzb-opts, body.mobile .qzb-opts[data-n="3"] { grid-template-columns: 1fr; gap: 6px; }
+  body.mobile .qzb-opts[data-n="2"] { grid-template-columns: 1fr 1fr; }
+  body.mobile .qzl-how { columns: 1; font-size: 12px; }
+  body.mobile .qzb-status { text-align: left; min-width: 0; font-size: 13px; }
+}
+@media (orientation: landscape) {
+  body.mobile #qz-board {
+    left: auto; right: calc(6px + var(--sar)); top: calc(6px + var(--sat)); bottom: calc(6px + var(--sab)); transform: none;
+    width: min(440px, 52vw); max-height: none;
+  }
+  body.mobile .qz-nav { right: auto; left: calc(10px + var(--sal)); top: auto; bottom: calc(10px + var(--sab)); }
+  body.mobile .qzb-q { font-size: 16px; }
+  body.mobile .qzb-opt { min-height: 40px; font-size: 14px; padding: 4px 8px; }
+  body.mobile .qzb-opt kbd { width: 24px; height: 24px; font-size: 13px; }
+  body.mobile .qzl-how { columns: 1; font-size: 11px; }
+  /* torcida em cima dos botões de sair/convidar, compacta */
+  body.mobile #qz-cheer {
+    top: auto; bottom: calc(64px + var(--sab)); left: calc(10px + var(--sal)); transform: none; gap: 4px;
+    max-width: calc(100vw - min(440px, 52vw) - 30px); justify-content: flex-start;
+  }
+  body.mobile #qz-cheer button { font-size: 12px; padding: 2px 8px; border-width: 2px; }
+  body.mobile .qc-r { font-size: 15px !important; padding: 1px 6px !important; }
+  body.mobile.qz-on #ping { top: auto; right: auto; left: calc(196px + var(--sal)); bottom: calc(22px + var(--sab)); }
+}
+@media (max-width: 900px) { body:not(.mobile) #qz-board { left: 12px; right: 12px; width: auto; } }
+/* desktop baixo (notebook pequeno): lousa mais compacta */
+@media (max-height: 640px) {
+  body:not(.mobile) #qz-board { max-height: 56vh; padding: 6px 12px; gap: 5px; }
+  body:not(.mobile) .qzb-q { font-size: 18px; }
+  body:not(.mobile) .qzb-opt { min-height: 40px; font-size: 15px; }
+}

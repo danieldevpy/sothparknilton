@@ -100,6 +100,20 @@ const SOUNDS = {
   qm_grab: () => tone({ type: 'triangle', from: 440, to: 660, dur: 0.08, vol: 0.06 }),
   qm_enter: () => { tone({ type: 'triangle', from: 392, dur: 0.08, vol: 0.05 }); tone({ type: 'triangle', from: 587, dur: 0.12, vol: 0.05, delay: 0.09 }); },
   qm_revive: () => [392, 523, 659, 784].forEach((f, i) => tone({ type: 'sine', from: f, dur: 0.14, vol: 0.06, delay: i * 0.07 })),
+  // Corrida das Perguntas
+  qz_lock: () => { tone({ type: 'triangle', from: 660, to: 880, dur: 0.06, vol: 0.06 }); },
+  qz_tick: () => tone({ type: 'sine', from: 1200, dur: 0.03, vol: 0.04 }),
+  qz_right: () => { tone({ type: 'sine', from: 988, dur: 0.12, vol: 0.07 }); tone({ type: 'sine', from: 1319, dur: 0.22, vol: 0.07, delay: 0.1 }); },
+  qz_wrong: () => { tone({ type: 'square', from: 150, to: 120, dur: 0.32, vol: 0.06 }); tone({ type: 'square', from: 110, dur: 0.3, vol: 0.04, delay: 0.05 }); },
+  qz_hop: () => tone({ type: 'sine', from: 300, to: 620, dur: 0.12, vol: 0.06 }),
+  qz_hit: () => { tone({ type: 'sine', from: 200, to: 60, dur: 0.18, vol: 0.2 }); noise({ dur: 0.25, vol: 0.16, freq: 2400 }); },
+  qz_block: () => { [1320, 1980].forEach((f) => tone({ type: 'triangle', from: f, to: f * 0.96, dur: 0.35, vol: 0.06 })); noise({ dur: 0.08, vol: 0.1, freq: 5000 }); },
+  qz_shield: () => [523, 784, 1046].forEach((f, i) => tone({ type: 'sine', from: f, dur: 0.18, vol: 0.05, delay: i * 0.06 })),
+  qz_gift: () => [784, 988, 1175, 1568].forEach((f, i) => tone({ type: 'square', from: f, dur: 0.07, vol: 0.035, delay: i * 0.05 })),
+  qz_card: () => { noise({ dur: 0.18, vol: 0.08, freq: 3500 }); tone({ type: 'sine', from: 400, to: 900, dur: 0.14, vol: 0.04 }); },
+  qz_gold: () => [523, 659, 784, 1046, 1319].forEach((f, i) => tone({ type: 'triangle', from: f, dur: 0.12, vol: 0.06, delay: i * 0.07 })),
+  qz_bell: () => { for (let i = 0; i < 10; i++) tone({ type: 'square', from: i % 2 ? 1760 : 1568, dur: 0.05, vol: 0.035, delay: i * 0.055 }); },
+  qz_whoosh: () => noise({ dur: 0.3, vol: 0.08, freq: 3000 }),
 };
 
 export function play(name) {

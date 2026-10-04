@@ -145,3 +145,47 @@ recarga 1,5 s (1,9 difícil), bola parada fora do alcance volta ("juiz") — hav
 pelo simulador: `speedOf` tratava `hold = -1` como "segurando". Resultado: 1v1 13–21% de acerto e rodadas de 14–19 s;
 2v2 27–47%, 9–14 s; ~10% de pegadas; ≤ 4% por tempo; habilidade decide sem ser absoluta no 2v2. Meta subiu 40 → 50 (as
 partidas davam ~1 min). Mexeu em `QM`/`LEVELS`? Rode o simulador (1v1 e 2v2, fácil e difícil) e registre aqui.
+
+**D-031 — Corrida das Perguntas: corrida de tabuleiro com a MESMA pergunta para todos, numa sala separada (Escola).** (2026-10-04)
+Pedido: quiz de inglês que é corrida (acertou anda uma casa), com mecânicas, para aprender jogando, com "participar ou
+assistir". Opções: (a) perguntas adaptadas por jogador (cada um no seu nível) — mais justo para níveis diferentes, mas
+perde o momento coletivo da revelação e a plateia não acompanha; (b) Kahoot puro (pontos, sem tabuleiro) — não é
+corrida; (c) escolhida: todos respondem a mesma pergunta, a dificuldade é da sala (Fácil/Médio/Difícil/Misto progressivo)
+e o "balanço" vem do número de opções (3 no fácil), do tempo por tamanho do texto, da cola e das cartas. Instância
+separada como Dojo/Ginásio (várias salas, banda só para quem está dentro, sem física: mensagens por fase). A casa do fim
+da avenida virou a Escola (mais uma "room" no mapa sem alargar a praça). Quem entra no meio começa da largada; depois
+de 60% da pista do líder entra só na próxima (antes disso ainda dá para virar sendo bom — ver D-033).
+
+**D-032 — Banco de perguntas só no servidor, tema validável, conteúdo de tabelas + escrito à mão.** (2026-10-04)
+`shared/` é público em `/shared/*`: o gabarito lá seria cola. O banco fica em `server/quiz/` e o cliente só recebe
+enunciado + opções embaralhadas; a certa vai na revelação. Formato de tema simples (`{cats, questions:[{id,cat,lvl,q,a,w,tip}]}`)
+com `validateTheme`, pensado para temas futuros gerados por IA (validar → revisar → cachear → `registerTheme`).
+Tema Inglês com ~2.700 perguntas: vocabulário (20 temas, PT→EN e EN→PT, erradas do mesmo tema), verbos irregulares
+(passado/particípio/frase/significado, com as pegadinhas bought×brought etc.), opostos e UK×US gerados de tabelas, e
+~650 escritas à mão (gramática, situações, falsos cognatos, expressões, phrasal verbs, preposições, ortografia, números,
+pronúncia, certo/errado, leitura). Regra de escrita: errada tem que ser errada de verdade (removidas as ambíguas
+como "Have you ever gone to London?" e "I have the apple"). Ids pelo texto (não pela posição) para não repetir pergunta.
+
+**D-033 — Combo "2 seguidas = quem está na frente volta 1": cálculo justo e escudo de 1 pergunta.** (2026-10-04)
+Regras para ser "só uma mecânica": alvo decidido ANTES da pergunta (todo mundo vê a ameaça), o mais perto estritamente à
+frente; um ataque por alvo por pergunta (quem está mais atrás escolhe primeiro); empate não é "na frente"; ninguém volta
+antes da largada; quem cruzou a chegada está a salvo; ataques resolvem antes dos escudos novos. Liderando, o combo dá
+escudo. Medido com `scripts/quiz-balance.js` (14 casas, modo médio, 300–400 corridas por cenário):
+- escudo que durava até ser usado: 0,5 ataque × 2,4 bloqueios por corrida 1x1 — o combo sumia;
+- 2 perguntas: 1,1 × 1,5; sem escudo: 2,4 × 0 (líder não ganha nada pelo combo);
+- **1 pergunta (escolhido, `QZ.SHIELD_TURNS = 1`)**: 1,6 ataques × 1,1 bloqueios, 1,6 viradas de liderança; quem é melhor
+  continua vencendo igual com ou sem combo (0,75×0,65: 70%×30% nos dois; 0,85×0,60: 91% × 92%; 4 jogadores 0,9 vence
+  61% × 67% sem combo) — ou seja, dá jogo sem decidir o jogo. Iguais: 51%×49%.
+- Entrar atrasado (0,9 contra líder 0,65): vence 74% se entrar com o líder na casa 4, 58% na 6, 33% na 8; mesma
+  habilidade, 28% — "só é justo na próxima", mas dá para virar.
+- Bug achado pelo simulador: o criador da sala vencia 59% entre iguais — no empate do sorteio das cartas (largada) o 1º
+  da lista contava como líder. Agora empatados têm o mesmo peso.
+Duração: 14 casas ≈ 16–18 perguntas ≈ 3,5–4 min; 10 casas ≈ 11–12 perguntas ≈ 2,6–2,8 min.
+
+**D-034 — Ouro, cartas e robôs; rapidez vale ponto, não casa.** (2026-10-04)
+Pergunta de ouro previsível (a cada 5, um nível acima, 2 casas): cria expectativa sem sorteio. Cartas só nas casas de
+presente (primeira passagem; sorteio pesado pela posição: atrás tira mais 💨/🎲, líder mais 🤫) — todo mundo passa pelas
+mesmas casas, então é justo, e quem leva combo e volta não ganha presente de novo. Rapidez dá só pontos (desempate e
+ranking): casas por rapidez virariam jogo de reflexo e puniriam quem lê devagar (o objetivo é aprender). Robôs no próprio
+servidor (fácil 55%, médio 72%, gênio 88% no básico, −9% por nível) para treinar sozinho e completar sala; gente tira
+robô do lugar; robô não segura sala; 4 perguntas sem responder → plateia (senão corridas de robô sem fim).

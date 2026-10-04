@@ -27,7 +27,7 @@ Minigames chegam depois, aproveitando as áreas do mapa.
 | Praça (centro) | Fonte, 4 bancos, 4 postes, placa | Moeda na fonte (brilho + "plim"), sentar, ligar/desligar poste |
 | Lago (oeste) | Lago com gelo na margem, píer, 3 patos, banco | Pedra no lago (splash + ondas), quack nos patos |
 | Área de Sports (leste) | Campinho, 2 gols, arquibancada com placar, poste | Bola física compartilhada, gols, placar global |
-| Topo (não andável) | Montanhas, pinheiros, 2 casas e o **prédio do Dojo** | Clicar no Dojo: lutas de karatê ao vivo → assistir |
+| Topo (não andável) | Montanhas, pinheiros, 1 casa, o **Ginásio**, a **Escola** (no fim da avenida da fonte) e o **Dojo** | Dojo: assistir lutas · Ginásio: queimada · Escola: Corrida das Perguntas |
 
 ## Chat
 - Balões no estilo Habbo: aparecem sobre quem fala, empurram os anteriores para cima e sobem devagar até sumir (~28 s).
@@ -204,6 +204,73 @@ uma faixa de fichinhas; deitado: a quadra inteira.
 
 **Equilíbrio** (`scripts/queimada-balance.js`, IAs de habilidade 0,5–0,9): 1v1 ~13–21% dos arremessos acertam, rodadas
 de 14–19 s; 2v2 ~27–47%, rodadas de 9–14 s; ~10% de pegadas; quase nenhuma rodada acaba por tempo.
+
+## Minigame 4 — Corrida das Perguntas 📚 (v0.8.0)
+Um quiz que é **corrida**: cada um tem uma pista de tabuleiro (10 ou 14 casas) numa sala de aula, e cada acerto é um
+pulinho para a frente. Tema 🇺🇸 **Inglês** para quem fala português (~2.700 perguntas escritas/geradas de tabelas):
+vocabulário por tema (PT→EN e EN→PT), gramática, verbos irregulares, "na prática" (o que dizer em cada situação),
+falsos cognatos, expressões, phrasal verbs, preposições, ortografia, opostos, números e horas, pronúncia, britânico ×
+americano, certo-ou-errado e interpretação. No futuro o tema será configurável e abastecido por IA (ver QUIZ_CONTENT).
+Estilo "RPG de papel recortado": barra do grupo com sequência 🔥, escudo 🛡️ e cartas; números de "dano" (+1, −1 CASA);
+apagador voando no combo; professor que comenta em inglês ("Correct!", "No throwing erasers!").
+
+**Entrar**: a casa no fim da avenida (norte da fonte) virou a **Escola** (madeira creme, telhado verde, torre com
+sino, relógio, bandeira do tema, cavalete "QUIZ"). Com aula rolando ela acende: alunos levantando a mão nas janelas,
+porta aberta, "CERTO!/ERROU!/COMBO!" saindo do prédio e o sino toca quando alguém vence. Clique → painel com as salas
+(`Sala 1 · 🇺🇸 Inglês · 🟡 Médio · 14 casas · Nilton 7/14 · Daniel 5/14 · pergunta 9 · 👀 2` + **🙋 Correr** /
+**👀 Assistir**) e **➕ Nova sala** (🟢 Fácil · 🟡 Médio · 🔴 Difícil · 🎲 Misto; ⚡ Rápida 10 casas / 🏁 Normal 14).
+Também: cartão do player → **📚 Chamar p/ Quiz** (da praça abre uma sala para os dois; de dentro, ➕ Convidar).
+Notificação pequena quando alguém abre uma sala.
+
+**A rodada** (todo mundo responde a MESMA pergunta, ao mesmo tempo):
+1. *Intro* (1,6 s): "PERGUNTA 7 · 🔤 Vocabulário · comida 🍔 · ⭐⭐" + quem está com combo e em quem (seta ⚡ na cena).
+2. *Pergunta*: lousa com o enunciado, opções **A B C D** (teclas 1–4 ou A–D; 3 opções no fácil, 2 no certo/errado),
+   relógio (12–24 s, mais tempo para enunciado longo). Respondeu = **mão levantada** na cena (os outros veem que você
+   respondeu, não o quê). Todo mundo respondeu → revela na hora.
+3. *Revelação* (3,4–5 s): certa em verde, a sua errada em vermelho, bolinhas de quem marcou cada opção, a **explicação**
+   ("💡 Actually = na verdade · atualmente = currently") e as animações (pulinhos, presentes, apagador, escudo).
+
+**Mecânicas**
+| | Regra | Por quê |
+|---|---|---|
+| ✔ Acerto | anda 1 casa (errou ou não respondeu: fica) | o básico |
+| 🔥 Combo | a cada **2 acertos seguidos**: o adversário **mais perto à frente** volta 1 casa (apagador voando, "VOLTA 1 CASA!"). Liderando (ninguém à frente) → **🛡️ escudo** que segura o próximo ataque (vale 1 pergunta) | a ideia original: quem está atrás tem como reagir |
+| ⭐ Ouro | a 5ª, 10ª, 15ª... pergunta é um nível mais difícil e vale **2 casas** | picos de emoção previsíveis ("a próxima vale ouro!") |
+| 🎁 Presentes | casas 3, 7, 11: passou pela primeira vez → ganha uma carta (máx. 2). Quem está atrás tira mais 💨/🎲; o líder, mais 🤫 | recompensa andar e ajuda quem ficou para trás |
+| 🤫 Cola | some com 2 erradas (1 no fácil) — só você vê | ajuda nas difíceis; todo mundo começa com uma |
+| 💨 Pum | nuvem fedida nas opções de quem está na sua frente ~4 s (toque 3× para abanar); se ele já respondeu, fica para a próxima | zoeira estilo South Park, atrapalha sem tirar casa |
+| 🎲 Tudo ou nada | acertou anda o dobro (ouro = 4!), errou volta 1 | aposta para virar o jogo |
+| ⚡ Rapidez | só pontos (desempate e ranking), não casas | aprender não pode virar corrida de dedo |
+| 🏁 Chegada | primeiro a cruzar vence; dois na mesma rodada → quem acertou mais rápido. Quem cruzou não pode ser atacado | final limpo |
+
+**Cálculo justo do combo** (o "só uma mecânica" pedido): o alvo é decidido **antes** da pergunta (todo mundo vê a
+ameaça: "⚠️ Nilton está com COMBO: se ele acertar, você volta 1 casa!"); cada alvo só pode ser atacado por **um** combo
+por pergunta (quem está mais atrás escolhe primeiro, o seguinte pega o próximo da fila); empatado não conta como "na
+frente"; ninguém volta antes da largada; ataques resolvem antes dos escudos novos. Simulado (`scripts/quiz-balance.js`):
+o combo **não muda quem é melhor** (70% × 30% com ou sem combo entre 0,75 e 0,65), mas dá ~1,5 ataques e ~1,6
+viradas de liderança por corrida 1x1 e ~4,6 ataques com 4 jogadores.
+
+**Entrar no meio** ("só será justo na próxima"): quem entra começa **da largada** com uma cola; depois que o líder passou
+de 60% da pista, entra só na **próxima corrida** (assiste até lá; "⏳ entram na próxima: ..."). Mesmo atrasado dá para
+virar sendo bom: alguém de 90% de acerto entrando com o líder (65%) na casa 4 de 14 vence 74% das vezes (58% na 6,
+33% na 8); com a mesma habilidade, 28%.
+
+**Robôs** (treinar sozinho / completar a sala): 🤖 + fácil (~55%), médio (~72%) ou gênio (~88% no básico, menos nas
+difíceis); demoram para "ler" como gente, usam cartas e falam besteira ("Erro 404 😵"). Gente de verdade tira um robô
+do lugar quando a sala está cheia; sala sem nenhum humano fecha. Sozinho: **▶ Começar sozinho**.
+
+**Plateia 👀**: até 24, sentados no banco da parede (os bonecos de verdade) ou de costas na frente. Recebem a pergunta e
+podem dar um **palpite que não conta** ("✔ Você acertaria!") — dá para aprender assistindo. Torcida: 📣 Vai Fulano,
+👏 😱 😂 🤔 🔥 (limite 1 a cada 0,7 s). **🙋 Quero correr** a qualquer momento (agora ou na próxima). Corredor que fica
+4 perguntas sem responder vai para a plateia.
+
+**Fim**: "🏆 FULANO VENCEU!", confete, sino da Escola, log na praça ("📚 Nilton venceu a Corrida das Perguntas (Inglês) —
+9/11 certas!"); pódio com ✔ acertos, 🔥 maior sequência e ⚡ ataques, e a **📖 Revisão** das perguntas que você errou
+(o que você marcou × a certa × a explicação). Nova corrida sozinha em ~20 s (quem pediu entra).
+
+**Celular**: em pé, a lousa ocupa a parte de baixo (opções em coluna, botões grandes) e a câmera enquadra o pelotão
+(espalhado demais → em volta de você) com uma **faixa de progresso** de todos acima da lousa; deitado, lousa à direita
+(opções 2×2) e a cena à esquerda; botões ➕ 👀 🚪 em vidro escuro.
 
 ## Chat de voz por grupos 🎙️ (v0.5.0)
 A voz é **só em grupo** — ninguém fala "para a praça inteira". Assim dá para conversar com os amigos sem virar bagunça.

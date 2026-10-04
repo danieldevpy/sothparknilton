@@ -35,7 +35,6 @@ export const MAP = {
 
   houses: [
     { x: 560, y: 120, w: 200, h: 150, color: '#e9c46a', roof: '#9b2c2c' },
-    { x: 880, y: 100, w: 240, h: 170, color: '#d98c5f', roof: '#3f4a5a' },
   ],
 
   // Prédio do Dojo de Karatê na fileira de casas: clicar mostra as lutas ao vivo e leva
@@ -44,6 +43,9 @@ export const MAP = {
   // Ginásio da Queimada (do lado esquerdo, acima do lago): clicar lista as partidas e deixa entrar
   // ou criar uma. `door` = onde quem está jogando "está" na praça (e reaparece ao sair).
   gym: { id: 'gym', x: 240, y: 96, w: 260, h: 174, door: { x: 370, y: 322 } },
+  // Escola (no fim da avenida que sai da fonte para o norte): Corrida das Perguntas. A casa que ficava
+  // aqui virou a escola. `door` = onde quem está numa sala "está" na praça (e reaparece ao sair).
+  school: { id: 'school', x: 880, y: 92, w: 240, h: 178, door: { x: 1000, y: 320 } },
 
   fountain: { id: 'fountain', x: 1000, y: 640, r: 92, interact: { x: 1000, y: 760 } },
 

@@ -3,6 +3,44 @@
 Diário de desenvolvimento. Entrada nova **no topo**. Formato:
 `## AAAA-MM-DD — título` · o que foi feito · decisões · pendências.
 
+## 2026-10-04 — v0.8.0: Corrida das Perguntas na Escola 📚🇺🇸 (feita no worktree `claude/english-quiz-minigame-5d7886`)
+Pedido: minigame "jogo das perguntas" começando pelo inglês (tema configurável/IA no futuro; agora tudo escrito aqui),
+corrida em que acertar anda uma casa, com mecânicas (2 seguidas = quem está na frente volta 1, com cálculo justo),
+estilo quiz com certa/erradas e dificuldade balanceável, participar ou assistir, quem entra no meio começa do início,
+mais uma "room" no mapa e um ambiente para testar em produção. Feito em paralelo à sessão da compensação de lag.
+
+**Feito**
+- Mapa: a 2ª casa (fim da avenida da fonte) virou a **Escola** (`MAP.school`, porta andável em 1000,320) +
+  `render/schoolhouse.js` (prédio vivo: janelas com alunos levantando a mão, sino, bandeira do tema, cavalete QUIZ).
+- `shared/quiz.js` (QZ, MODES, CARDS, CHEERS, BOTS, alvos do combo, passos, presentes, tempo por texto).
+- `server/quiz/` (banco só no servidor): `bank.js` (formato compacto, `validateTheme`, `buildOptions`, `QuestionPicker`
+  sem repetir e variando categoria), `themes.js` (registro), `en/` com ~2.700 perguntas em 15 categorias e 3 níveis.
+- `server/minigames/Quiz.js` (`QuizMatch`): lobby/contagem/intro/pergunta/revelação/pódio, combo com escudo, ouro,
+  presentes e cartas (🤫 Cola, 💨 Pum, 🎲 Tudo ou nada), chegada com desempate por rapidez, entrar no meio/na próxima,
+  plateia (lugares, torcida com limite), robôs no servidor (fácil/médio/gênio, usam cartas e falam), ausente → plateia.
+  `Room`: `qzs`/`qzOf`, `qz_create/join/leave`, convite `game:'quiz'` (de dentro chama várias pessoas), `busyBeyondQz`,
+  quem está na Escola não entra em outro jogo; `/health` mostra `quiz`.
+- Cliente: `minigames/school.js` (prédio, painel, notificação), `minigames/quiz.js` (cena, linha do tempo da revelação,
+  lousa A–D, cartas, status do combo, lobby com robôs, plateia com palpite e torcida, pódio com revisão das erradas,
+  convidar), `render/classroom.js` (sala de aula, pistas de tabuleiro, professor, apagador, escudo, pum, troféu),
+  `quiz.css` (desktop + celular), poses `qzhand/qzhit/qzwin` e antena de robô no boneco, sons `qz_*`, botão
+  "📚 Chamar p/ Quiz" no cartão do player.
+- Ferramentas: `scripts/quiz-balance.js` (simulador com o Room real; `QZ.X=valor` testa variações), `scripts/qzbot.js`
+  (bots pela rede: correm chutando e aprendendo, ou `--assistir`). 16 testes novos (`tests/quiz.test.js`), 104 no total.
+  Decisões D-031..D-034, `docs/QUIZ_CONTENT.md`.
+
+**Achados no caminho**: viés de 59% para quem criou a sala (empate do sorteio de cartas na largada contava o 1º como
+líder); escudo do líder que durava até ser usado anulava o combo (0,5 ataque × 2,4 bloqueios) → 1 pergunta; ataques
+precisavam resolver antes dos escudos novos; a classe da carta 💨 colidia com a nuvem do pum (escondia as opções de
+quem tinha a carta); pistas vazias quando alguém saía (linhas compactadas); nav do celular em cima do 🎙️; números do
+relógio ilegíveis; câmera longe demais no celular deitado (agora segue o pelotão + faixa de progresso).
+
+**Verificado no navegador** (porta 3200, robôs da sala + `qzbot` pela rede, 2 abas): Escola fechada/acesa e painel,
+criar sala, robôs, contagem, perguntas de várias categorias, responder por clique, revelação com explicação e quem
+marcou o quê, pulinhos, ESCUDO/BLOQUEOU, pergunta de ouro, nuvem do pum, pódio + revisão, nova corrida, plateia
+(banco, palpite, torcida, "VAI DANIEL!"), quero correr no meio (entrou na largada), ausente indo para a plateia, convite
+pelo cartão (sala nova para os dois), celular 375×812 e 812×375. Console e servidor sem erros.
+
 ## 2026-10-03 — v0.7.0: Queimada no Ginásio 🔴🔵 (feita no worktree `feature/queimada`)
 Pedido: implementar a queimada desenhada com outro modelo (pegada, arremesso, defesa, caos, fila/squad, modos de
 pontuação), com uma "casa" no mapa para entrar em partidas existentes e convites como nos outros jogos — e melhorar.

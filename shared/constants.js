@@ -97,6 +97,27 @@ export const MSG = {
   QM_EVENT: 'qm_event', // s->membros {kind, ...}
   QM_END: 'qm_end', // s->todos {id, winner, winnerNick, rank:[[pid, nick, pts, hits, catches, dodges]]}
 
+  // ---- Corrida das Perguntas (salas da Escola, ver shared/quiz.js e server/quiz/) ----
+  // convite pelo cartão do player: CHALLENGE/CHALLENGE_REPLY/CH_STATUS com `game: 'quiz'`
+  QZ_CREATE: 'qz_create', // c->s {mode, len} cria uma sala e entra correndo
+  QZ_JOIN: 'qz_join', // c->s {id, as: play|watch} entra (correr ou assistir) · plateia com as:'play' = quero correr
+  QZ_LEAVE: 'qz_leave', // c->s {} sai (volta para a porta da Escola)
+  QZ_ANSWER: 'qz_answer', // c->s {n, i} resposta (índice da opção) da pergunta n
+  QZ_CARD: 'qz_card', // c->s {c: cola|pum|dobro} usa uma carta
+  QZ_CHEER: 'qz_cheer', // c->s {r, side?} reação / torcida
+  QZ_BOT: 'qz_bot', // c->s {add: easy|normal|hard} | {remove: id} (fora da corrida)
+  QZ_START: 'qz_start', // c->s {} começa já (sozinho ou sem esperar a contagem)
+  QZ_ENTER: 'qz_enter', // s->c você entrou {id, role, mode, len, gifts, theme, ph, tm, q?}
+  QZ_EXIT: 'qz_exit', // s->c {id, reason: left|full|gone|busy}
+  QZ_LIVE: 'qz_live', // s->todos {id, ph, mode, len, theme, flag, n, r:[[id, pos, nick?]], w:[pid], open} | {id, gone:1}
+  QZ_ROOM: 'qz_room', // s->membros {host, r:[corredor...], w:[[pid, seat, want]]}
+  QZ_PHASE: 'qz_phase', // s->membros {ph, tm, n, race, (intro: lvl, gold, cat, combos)}
+  QZ_Q: 'qz_q', // s->membros {n, q, opts, tm, lvl, gold, cat, pum:[[vítima, quem]]} (sem a resposta!)
+  QZ_REVEAL: 'qz_reveal', // s->membros {n, ok, a, tip, res, combos, gifts, win, fast}
+  QZ_EVENT: 'qz_event', // s->membros {kind, ...}
+  QZ_COLA: 'qz_cola', // s->quem usou a cola {n, hide:[i...]}
+  QZ_END: 'qz_end', // s->todos {id, winner, winnerNick, bot, theme, n, rank:[[id, nick, pos, right, asked, best, attacks, pts, bot]]}
+
   // ---- chat de voz por grupos (ver shared/voice.js) ----
   VC_INVITE: 'vc_invite', // c->s {to} convida para o meu grupo (cria um se eu não tiver)
   VC_REQUEST: 'vc_request', // c->s {to} pede para entrar no grupo de `to`
@@ -112,4 +133,4 @@ export const MSG = {
 };
 
 // Minigames que podem ser escolhidos num desafio (campo `game`; ausente = golagol).
-export const GAMES = ['golagol', 'karate', 'queimada'];
+export const GAMES = ['golagol', 'karate', 'queimada', 'quiz'];

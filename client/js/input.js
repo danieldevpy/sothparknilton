@@ -16,6 +16,7 @@ export function setupInput(game, hud, canvas) {
   const gg = game.gg;
   const kt = game.kt;
   const qm = game.qm;
+  const qz = game.qz;
 
   canvas.addEventListener('pointermove', (ev) => {
     if (qm.active()) {
@@ -24,7 +25,7 @@ export function setupInput(game, hud, canvas) {
       hud.tooltip(null);
       return;
     }
-    if (kt.active()) {
+    if (kt.active() || qz.active()) {
       canvas.style.cursor = 'default';
       hud.tooltip(null);
       return;
@@ -57,6 +58,11 @@ export function setupInput(game, hud, canvas) {
       kt.pointerDown(ev);
       return;
     }
+    if (qz.active()) {
+      hud.blurChat();
+      qz.pointerDown(ev);
+      return;
+    }
     if (ev.button !== 0) return;
     hud.blurChat();
     hud.closePlayerCard();
@@ -74,7 +80,7 @@ export function setupInput(game, hud, canvas) {
     qm.pointerUp(ev);
     gg.pointerUp(performance.now());
   });
-  canvas.addEventListener('contextmenu', (ev) => { if (kt.active() || qm.active()) ev.preventDefault(); });
+  canvas.addEventListener('contextmenu', (ev) => { if (kt.active() || qm.active() || qz.active()) ev.preventDefault(); });
   canvas.addEventListener('wheel', (ev) => {
     if (gg.isPlaying() && gg.wheel(ev)) ev.preventDefault();
   }, { passive: false });
@@ -92,6 +98,10 @@ export function setupInput(game, hud, canvas) {
       return;
     }
     if (qm.key(ev, true, performance.now())) {
+      ev.preventDefault();
+      return;
+    }
+    if (qz.key(ev, true)) {
       ev.preventDefault();
       return;
     }
@@ -116,6 +126,7 @@ export function setupInput(game, hud, canvas) {
   window.addEventListener('keyup', (ev) => {
     held.delete(ev.code);
     qm.key(ev, false, performance.now());
+    qz.key(ev, false);
     kt.key(ev, false, performance.now());
     gg.key(ev, false, performance.now());
   });

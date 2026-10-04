@@ -70,6 +70,22 @@ Pontos: acerto **5** (+2 de **tabela**, se quicou na parede) · pegada **3** · 
 último(s) de pé na rodada **10**. Primeiro a **50** vence; a quadra recomeça sozinha.
 Sem ninguém? `node scripts/qmbot.js 3` coloca 3 bots no Ginásio (`node scripts/qmbot.js Bot SeuNick` te chama).
 
+## 📚 Minigame: Corrida das Perguntas (inglês)
+Clique na **Escola** (no fim da avenida, atrás da fonte) → **🙋 Correr** numa sala aberta, **👀 Assistir**, ou
+**➕ Nova sala** (Fácil / Médio / Difícil / Misto · 10 ou 14 casas). Também dá para chamar alguém pelo cartão do boneco.
+Todo mundo responde a mesma pergunta de inglês (tradução, gramática, verbos, situações, falsos cognatos, expressões...);
+**acertou = anda 1 casa**. Primeiro a cruzar a chegada vence.
+
+| Mecânica | Como funciona |
+|---|---|
+| 🔥 Combo | 2 acertos seguidos: quem está na sua frente **volta 1 casa** (liderando você ganha um 🛡️ escudo) |
+| ⭐ Ouro | a cada 5 perguntas, uma vale 2 casas |
+| 🎁 Presentes | casas 3, 7, 11 dão cartas: 🤫 **Cola** (some com 2 erradas) · 💨 **Pum** (nuvem nas opções de quem está na frente) · 🎲 **Tudo ou nada** (acertou anda o dobro, errou volta 1) |
+| ⏳ Entrar no meio | começa da largada (perto do fim, entra na próxima corrida) |
+
+Teclas: `1`–`4` ou `A`–`D` respondem · `Q` `W` `E` usam as cartas. No fim, o pódio mostra a **revisão** das que você errou.
+Sozinho? Na sala, **🤖 + Robô** (fácil/médio/gênio) e **▶ Começar sozinho**. Bots pela rede: `node scripts/qzbot.js 3`.
+
 ## O mapa: Praça Central
 - **Praça** — fonte no centro, bancos, postes de luz.
 - **Lago** — patos nadando, píer, pedras para jogar na água.

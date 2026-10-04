@@ -148,6 +148,38 @@
 - **Bots**: `scripts/queimada-ai.js` (IA que só aperta botões, com habilidade/reação) é usada pelo `qmbot.js` (WebSocket,
   estima velocidades pelos estados) e pelo `queimada-balance.js` (Room real em memória, tempo simulado).
 
+## Minigame Corrida das Perguntas (Escola)
+```
+ praça: SchoolClient (client/js/minigames/school.js) ── salas (welcome.qzs / qz_live) · painel 🙋 Correr / 👀 Assistir / ➕
+   prédio da Escola (render/schoolhouse.js: fixo no fundo + parte viva: janelas, sino, bandeira) · notificação
+ qz_create / qz_join{as} / convite (game:'quiz') ──▶ Room.qzEnter(): room.qzs(id → sala), room.qzOf(pid → sala),
+                                                   pose 'quiz', posição = porta da Escola, QuizMatch.add(p, as)
+ QuizMatch (server/minigames/Quiz.js): racers (gente + robôs, id < 0) · watchers (lugares) · QuestionPicker
+   lobby → count → intro (alvos do combo) → ask (qz_q, sem gabarito; robôs respondem sozinhos) → reveal (resolve:
+   passos → presentes → combos → chegada) → intro... → over (qz_end p/ todos) → count
+   qz_room/qz_phase/qz_q/qz_reveal/qz_event só para os membros; qz_live e qz_end para todos
+ server/quiz/ → bank.js (formato, validateTheme, buildOptions, QuestionPicker) · themes.js · en/ (o tema Inglês)
+ shared/quiz.js → QZ, MODES, CARDS, BOTS, comboTargets/closestAhead/stepsFor/drawCard/askTime (servidor + cliente + simulador)
+ client/js/minigames/quiz.js → QuizClient: cena própria (render/classroom.js) + lousa em DOM (#qz-ui)
+```
+- **Gabarito só no servidor**: o banco fica em `server/quiz/` (fora de `shared/`, que é público). `qz_q` leva enunciado
+  e opções embaralhadas; a resposta certa e a explicação só vão no `qz_reveal`. A cola (`qz_cola`) vai só para quem usou.
+- **Sem física, sem estado a 30 Hz**: a sala é movida a eventos (uma mensagem por mudança de fase) — banda mínima.
+  O cliente conta o tempo localmente a partir de `tm`.
+- **Revelação em linha do tempo no cliente**: `qz_reveal` traz `res` (de, meio, fim de cada um), `combos` e `gifts`;
+  o cliente agenda pulinhos (0,26 s por casa), presentes ao passar pela casa, apagador voando e o recuo — o servidor
+  só decide; o `qz_room` logo depois confirma as posições finais.
+- **Alvos do combo decididos na intro** (`comboTargets` com as posições de antes da pergunta): todo mundo vê a ameaça,
+  e a revelação não depende de ordem de chegada das respostas.
+- **Robôs no servidor** (sem WebSocket): `planBot` sorteia quando responde (pela habilidade e pelo tamanho do texto) e
+  se acerta (habilidade − 9% por nível; cola ajuda); usam cartas com a mesma lógica do simulador. Robô não segura sala.
+- **Quem entra no meio** começa da largada (`resetRacer`); passou do corte (`QZ.JOIN_CUTOFF`) ou sala cheia → plateia
+  com `want` e entra no `startRace` seguinte, em ordem de pedido.
+- **Câmera**: enquadra largada → chegada na área livre da tela (fora da lousa); em tela estreita enquadra o pelotão
+  (ou em volta de mim) e desenha a faixa de progresso; as pistas usadas são compactadas em linhas (`row()`).
+- **Simulador**: `scripts/quiz-balance.js` usa o `Room` real com tempo simulado e "jogadores" de habilidade fixa;
+  `QZ.X=valor` na linha de comando testa variações sem editar o código.
+
 ## Chat de voz por grupos (WebRTC)
 ```
  navegador A ──vc_invite/vc_request/vc_reply──▶ server/VoiceHub.js (room.voice)   grupos, convites, mudo
