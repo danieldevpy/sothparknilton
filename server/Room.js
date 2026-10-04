@@ -7,7 +7,7 @@ import {
 } from '../shared/constants.js';
 import { MAP, benchSeats } from '../shared/map.js';
 import { isWalkable, inLake, dist } from '../shared/geometry.js';
-import { PathGrid } from '../shared/pathfinding.js';
+import { PathGrid, followPath } from '../shared/pathfinding.js';
 import { GG } from '../shared/golagol.js';
 import { ARENA } from '../shared/arena.js';
 import { GolAGol } from './minigames/GolAGol.js';
@@ -572,23 +572,9 @@ export class Room {
       p.vx = p.vy = 0;
       return;
     }
-    let budget = PLAYER_SPEED * dt;
     const ox = p.x;
     const oy = p.y;
-    while (budget > 0 && p.path.length) {
-      const t = p.path[0];
-      const d = dist(p.x, p.y, t.x, t.y);
-      if (d <= budget) {
-        p.x = t.x;
-        p.y = t.y;
-        budget -= d;
-        p.path.shift();
-      } else {
-        p.x += ((t.x - p.x) / d) * budget;
-        p.y += ((t.y - p.y) / d) * budget;
-        budget = 0;
-      }
-    }
+    followPath(p, p.path, PLAYER_SPEED * dt);
     const dx = p.x - ox;
     if (Math.abs(dx) > 0.01) p.dir = dx > 0 ? 1 : -1;
     p.vx = dx / dt;

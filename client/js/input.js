@@ -1,7 +1,7 @@
 // Mouse/toque (clicar para andar/interagir) e teclado (WASD/setas, 1-5 emotes, Enter chat).
 // Durante uma partida de Gol a Gol os controles vão para o minigame (game.gg).
 
-import { EMOTES, MSG } from '/shared/constants.js';
+import { EMOTES } from '/shared/constants.js';
 
 const KEY_DIRS = {
   ArrowUp: [0, -1], KeyW: [0, -1],
@@ -129,7 +129,7 @@ export function setupInput(game, hud, canvas) {
   // enquanto segura uma direção, manda um destino curto à frente
   function steer() {
     if (!held.size || gg.isPlaying() || kt.active() || qm.active()) return;
-    const me = game.myServerPos();
+    const me = game.movePos();
     if (!me) return;
     let dx = 0;
     let dy = 0;
@@ -139,7 +139,7 @@ export function setupInput(game, hud, canvas) {
     }
     if (!dx && !dy) return;
     const n = Math.hypot(dx, dy);
-    game.send({ t: MSG.MOVE, x: Math.round(me.x + (dx / n) * 70), y: Math.round(me.y + (dy / n) * 70) });
+    game.steerTo(me.x + (dx / n) * 70, me.y + (dy / n) * 70);
     game.dest = null;
   }
   setInterval(steer, 140);

@@ -1,6 +1,6 @@
 {
   "name": "nilton-park",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Sala de comunicação multiplayer estilo cartoon recortado (Habbo-like) — MVP",
   "type": "module",
   "private": true,

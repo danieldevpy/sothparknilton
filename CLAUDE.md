@@ -29,6 +29,7 @@ node scripts/qmbot.js 3                  # 3 bots de Queimada no Ginásio (com v
 node scripts/queimada-balance.js 20 2    # IAs jogando queimada (1v1; use 4 para 2v2, `dificil` p/ o modo difícil)
 ./scripts/deploy.sh                      # PRODUÇÃO: testes + envia + docker compose na VPS (ver docs/DEPLOY.md)
 node scripts/netcheck.js ws://204.157.124.113:3000/ws   # mede ping/jitter/travadas contra um servidor
+# http://localhost:3000/?lag=300&jit=40   → simula internet ruim no cliente (?comp=1/0 força a compensação de lag)
 node scripts/voice-e2e.mjs               # E2E do chat de voz (Chrome headless + mic falso; precisa `npm i --no-save puppeteer`)
 ssh -t -p 45392 daniel@204.157.124.113 'sudo bash ~/servers/niltonpark/scripts/setup-domain.sh'   # domínio + HTTPS (1 vez)
 ```
@@ -61,6 +62,7 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 | `client/js/render/*` | Desenho procedural: `paint.js` (helpers), `character.js`, `world.js`, `bubbles.js`, `fx.js` |
 | `client/js/hud.js` / `input.js` / `audio.js` | Interface DOM, controles, sons sintetizados |
 | `client/js/jitter.js` | Atraso de interpolação adaptativo ao jitter da rede (praça, Gol a Gol, Karatê) |
+| `client/js/lagcomp.js` | Compensação de lag na praça: liga com ping alto constante e prevê o próprio boneco (D-030) |
 | `Dockerfile` / `compose.yml` / `scripts/deploy.sh` | Produção na VPS: jogo + TURN do chat de voz (coturn) — ver `docs/DEPLOY.md` |
 | `server/VoiceHub.js` | Chat de voz: grupos, convites/pedidos para entrar, mudo, repasse da sinalização WebRTC, credenciais TURN (`room.voice`) |
 | `shared/voice.js` | Constantes (`VOICE`), textos de status, validação da sinalização, ajuste do Opus no SDP |
@@ -99,6 +101,9 @@ Sem build: o cliente é ES modules puro servido direto de `client/` e `shared/`.
 15. Mexeu em `QM`/`LEVELS` (`shared/queimada.js`)? Rode `scripts/queimada-balance.js` (1v1 e 2v2) e registre em DECISIONS.
 
 ## Estado atual
+**v0.7.1 — Compensação de lag (2026-10-04)**: com ping alto constante (mediana ≥ 100 ms), o próprio boneco na praça
+anda na hora do clique e converge para o servidor (🛟 no ping). Testar com `?lag=300&jit=40` / `?comp=1`. Ver D-030.
+
 **v0.7.0 — Queimada no Ginásio (2026-10-03)**: novo prédio na praça (à esquerda, em cima do lago). Clique → lista
 de quadras (▶ Entrar) ou ➕ Nova partida (Fácil/Difícil); ou cartão do player → 🔴🔵 Chamar p/ Queimada. Fila
 compartilhada (1v1 → 2v2, quem espera entra quando alguém é queimado), cemitério (volta acertando alguém), arremesso

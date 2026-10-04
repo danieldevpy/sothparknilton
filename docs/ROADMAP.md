@@ -112,4 +112,5 @@ Status: ✅ feito · 🔜 próximo · 💡 ideia. IDs estáveis para referenciar
 - 💡 T-402 Snapshots delta + área de interesse
 - ✅ T-403 Deploy Docker na VPS pelo IP externo (`scripts/deploy.sh`, v0.4.0) · ✅ domínio + HTTPS/WSS (T-607, v0.5.0) · 💡 métricas
 - ✅ T-405 Jogabilidade pela internet: atraso adaptativo ao jitter, ping na tela, gzip/ETag, limite por IP (v0.4.0)
+- ✅ T-406 Compensação de lag na praça: predição do próprio boneco quando o ping fica alto constante + `?lag=` para testar (D-030)
 - 💡 T-404 Moderação: kick/mute por admin, rate limit por IP

@@ -222,10 +222,8 @@ export function setupMobile(game, hud) {
     stick.classList.remove('on');
     gg.axisY = 0;
     // para logo em vez de terminar o último passo (um tiquinho à frente, sem dar ré)
-    const me = game.myServerPos();
-    if (me && !gg.isPlaying() && lastDir) {
-      game.send({ t: MSG.MOVE, x: Math.round(me.x + lastDir.x * 12), y: Math.round(me.y + lastDir.y * 12) });
-    }
+    const me = game.movePos();
+    if (me && !gg.isPlaying() && lastDir) game.steerTo(me.x + lastDir.x * 12, me.y + lastDir.y * 12);
     lastDir = null;
   };
   stick.addEventListener('pointerup', release);
@@ -240,11 +238,11 @@ export function setupMobile(game, hud) {
       return;
     }
     if (mag < 0.2) return;
-    const me = game.myServerPos();
+    const me = game.movePos();
     if (!me) return;
     const lead = 40 + 50 * Math.min(1, mag);
     lastDir = { x: axis.x / mag, y: axis.y / mag };
-    game.send({ t: MSG.MOVE, x: Math.round(me.x + lastDir.x * lead), y: Math.round(me.y + lastDir.y * lead) });
+    game.steerTo(me.x + lastDir.x * lead, me.y + lastDir.y * lead);
     game.dest = null;
   }
   setInterval(steer, STEER_MS);

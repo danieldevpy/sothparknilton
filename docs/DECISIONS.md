@@ -145,3 +145,13 @@ recarga 1,5 s (1,9 difícil), bola parada fora do alcance volta ("juiz") — hav
 pelo simulador: `speedOf` tratava `hold = -1` como "segurando". Resultado: 1v1 13–21% de acerto e rodadas de 14–19 s;
 2v2 27–47%, 9–14 s; ~10% de pegadas; ≤ 4% por tempo; habilidade decide sem ser absoluta no 2v2. Meta subiu 40 → 50 (as
 partidas davam ~1 min). Mexeu em `QM`/`LEVELS`? Rode o simulador (1v1 e 2v2, fácil e difícil) e registre aqui.
+
+**D-030 — Ping alto constante: o próprio boneco é previsto na praça (adaptativo).** (2026-10-04)
+Na praça o boneco só andava quando o snapshot voltava: clique → ping + 110 ms de interpolação + até 66 ms de snapshot
+(~500 ms com 300 ms de ping). Os minigames já previam o próprio jogador; a praça não. Agora `client/js/lagcomp.js` liga a
+predição quando a **mediana** de 5 pings (~10 s) passa de 100 ms e desliga abaixo de 70 ms (histerese: pico isolado não
+liga, oscilação perto do limite não fica alternando). Funciona porque o movimento da praça é determinístico (sem colisão
+entre players): o cliente usa o mesmo A* e o mesmo passo (`followPath`, extraído de `Room.stepPlayer`), então a previsão
+bate com o servidor e a correção só aparece quando o servidor decide outra coisa (assento livre, bola que andou). Medido
+com `?lag=300&jit=40`: clique → boneco andando 480–550 ms → **35–50 ms**, sem teleportes, erro final 0 px. Ficou
+condicional (e não sempre ligado) como pedido; `?comp=1` força para comparar com ping baixo.

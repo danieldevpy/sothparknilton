@@ -4,6 +4,7 @@
 import { MAP, zoneAt } from '/shared/map.js';
 import { MSG, EMOTES, INTERP_DELAY_MS, SNAPSHOT_HZ } from '/shared/constants.js';
 import { AdaptiveDelay } from './jitter.js';
+import { LagMonitor, SelfPredictor } from './lagcomp.js';
 import { inLake, onDock } from '/shared/geometry.js';
 import { drawCharacter, headTop } from './render/character.js';
 import { prerenderBackground, mapSprites, duckPositions, drawBall, drawDuck, drawDestination } from './render/world.js';
@@ -44,6 +45,10 @@ export class Game {
     // atraso de interpolação da praça se adapta ao jitter da rede (ver jitter.js)
     this.snapDelay = new AdaptiveDelay({ interval: 1000 / SNAPSHOT_HZ, min: INTERP_DELAY_MS, max: 320 });
     this.rtt = null;
+    // ping alto constante → o próprio boneco é previsto na praça (ver lagcomp.js); ?comp=1/0 força
+    const comp = new URLSearchParams(location.search).get('comp');
+    this.lag = new LagMonitor({ force: comp === '1' ? true : comp === '0' ? false : null });
+    this.pred = new SelfPredictor();
     this.bg = prerenderBackground(MAP);
     this.sprites = mapSprites(MAP, this.world);
     this.zone = null;
@@ -132,7 +137,12 @@ export class Game {
         const rtt = now - msg.n;
         if (rtt >= 0 && rtt < 10000) {
           this.rtt = this.rtt == null ? rtt : this.rtt + (rtt - this.rtt) * 0.3;
-          this.hud.ping(this.rtt);
+          if (this.lag.add(rtt)) {
+            this.hud.log(null, this.lag.active
+              ? `🛟 Ping alto constante (${Math.round(this.lag.median())} ms): seu boneco agora anda na hora do clique.`
+              : 'Ping normalizou: compensação de lag desligada.');
+          }
+          this.hud.ping(this.rtt, this.lag.active);
         }
         break;
       }
@@ -214,8 +224,34 @@ export class Game {
   }
 
   moveTo(x, y) {
-    this.send({ t: MSG.MOVE, x: Math.round(x), y: Math.round(y) });
+    this.steerTo(x, y);
     this.dest = { x, y, at: performance.now() };
+  }
+
+  // pede para andar até (x, y); com a compensação de lag o boneco já sai andando
+  steerTo(x, y) {
+    x = Math.round(x);
+    y = Math.round(y);
+    this.send({ t: MSG.MOVE, x, y });
+    this.predictWalk(x, y);
+  }
+
+  predictWalk(x, y) {
+    if (this.predicting()) this.pred.walkTo(x, y, this.myServerPos()?.pose === 'bench');
+  }
+
+  // compensação ligada e eu andando livre na praça (minigames têm a própria predição)
+  predicting() {
+    return this.lag.active && this.pred.synced && this.predictingAllowed();
+  }
+
+  predictingAllowed() {
+    return this.players.has(this.me) && !this.gg.inMatch(this.me) && !this.hiddenInPlaza(this.me);
+  }
+
+  // base para os comandos de direção (teclado/joystick): onde o boneco está "agora"
+  movePos() {
+    return this.predicting() ? this.pred : this.myServerPos();
   }
 
   interact(hit) {
@@ -246,12 +282,17 @@ export class Game {
       return;
     }
     this.send({ t: MSG.INTERACT, id: hit.id, x: hit.x, y: hit.y });
-    if (hit.id !== 'duck') this.dest = { x: hit.x ?? hit.mx, y: hit.y ?? hit.my, at: performance.now() };
+    if (hit.id !== 'duck') {
+      this.dest = { x: hit.x ?? hit.mx, y: hit.y ?? hit.my, at: performance.now() };
+      this.predictWalk(this.dest.x, this.dest.y); // o servidor corrige o ponto exato (assento livre etc.)
+    }
     play('click');
   }
 
   emote(e) {
-    if (EMOTES[e]) this.send({ t: MSG.EMOTE, e });
+    if (!EMOTES[e]) return;
+    this.send({ t: MSG.EMOTE, e });
+    if (e === 'sit') this.pred.stop(); // sentar no chão para o boneco no servidor
   }
 
   chat(text) {
@@ -395,6 +436,9 @@ export class Game {
     if (window.innerWidth !== this.vw || window.innerHeight !== this.vh) this.resize();
     const t = now / 1000;
     const renderAt = now - this.snapDelay.get();
+    // sem compensação (ou num minigame) a previsão é refeita da posição do servidor quando voltar
+    const predict = this.lag.active && this.predictingAllowed();
+    if (!predict) this.pred.synced = false;
     // lutando no dojo: a cena é outra (ver minigames/karate.js)
     if (this.kt.active()) {
       this.kt.frame(dt, now);
@@ -407,10 +451,16 @@ export class Game {
     }
 
     for (const p of this.players.values()) {
-      const s = this.sample(p.buf, renderAt);
       // o último snapshot diz se ainda está andando (evita "piscar" parado entre amostras)
       const latest = p.buf[p.buf.length - 1];
-      p.r = this.gg.avatarOverride(p, now) || { x: s.x, y: s.y, dir: s.dir, moving: !!(s.moving && latest.moving), pose: s.pose };
+      let mine = null;
+      if (predict && p.id === this.me) {
+        if (!this.pred.synced) this.pred.reset(latest);
+        mine = this.pred.step(dt, latest, this.rtt ?? 0);
+        mine.pose = mine.moving ? '' : latest.pose;
+      }
+      const s = mine || this.sample(p.buf, renderAt);
+      p.r = this.gg.avatarOverride(p, now) || { x: s.x, y: s.y, dir: s.dir, moving: mine ? mine.moving : !!(s.moving && latest.moving), pose: s.pose };
       if (p.r.moving) p.phase += dt * 14;
       if (p.emote) {
         const dur = EMOTES[p.emote].duration;
